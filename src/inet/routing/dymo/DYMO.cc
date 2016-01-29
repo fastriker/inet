@@ -715,11 +715,13 @@ int DYMO::computeRREQBitLength(RREQ *rreq)
 
 RREP *DYMO::createRREP(RteMsg *rteMsg)
 {
+    //FIXME next call generates null pointer exception
     return createRREP(rteMsg, nullptr);
 }
 
 RREP *DYMO::createRREP(RteMsg *rteMsg, IRoute *route)
 {
+    //FIXME route maybe nullptr, maybe doesn't have protocoldata, maybe protocoldata not a DYMORouteData
     DYMORouteData *routeData = check_and_cast<DYMORouteData *>(route->getProtocolData());
     RREP *rrep = new RREP("RREP");
     AddressBlock& originatorNode = rrep->getOriginatorNode();
