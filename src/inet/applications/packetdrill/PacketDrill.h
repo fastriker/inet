@@ -30,7 +30,6 @@
 #include "PacketDrillApp.h"
 
 namespace inet {
-using namespace sctp;
 class PacketDrillApp;
 }
 
