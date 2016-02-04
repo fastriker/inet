@@ -58,7 +58,12 @@ void SendDataWithAckFrameExchange::doStep(int step)
 {
     switch (step) {
         case 0: transmitFrame(dupPacketAndControlInfo(dataFrame)); break;
-        case 1: expectReplyRxStartWithin(utils->getAckEarlyTimeout()); break;
+        case 1:
+            if (params->getUseFullAckTimeout())
+                expectFullReplyWithin(utils->getAckFullTimeout());
+            else
+                expectReplyRxStartWithin(utils->getAckEarlyTimeout());
+            break;
         case 2: statistics->frameTransmissionSuccessful(dataFrame, retryCount); succeed(); break;
         default: ASSERT(false);
     }
