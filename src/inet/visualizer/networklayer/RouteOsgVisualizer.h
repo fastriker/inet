@@ -31,10 +31,10 @@ class INET_API RouteOsgVisualizer : public RouteVisualizerBase
   protected:
     class INET_API OsgRoute : public Route {
       public:
-        osg::Geode *geode = nullptr;
+        osg::Node *node = nullptr;
 
       public:
-        OsgRoute(const std::vector<int>& path, osg::Geode *geode);
+        OsgRoute(const std::vector<int>& path, osg::Node *node);
         virtual ~OsgRoute();
     };
 

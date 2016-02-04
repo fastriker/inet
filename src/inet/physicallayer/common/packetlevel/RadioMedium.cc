@@ -235,8 +235,10 @@ void RadioMedium::removeNonInterferingTransmissions()
     EV_DEBUG << "Removing " << transmissionIndex << " non interfering transmissions\n";
     for (auto it = transmissions.cbegin(); it != transmissions.cbegin() + transmissionIndex; it++) {
         const ITransmission *transmission = *it;
-        fireTransmissionRemoved(transmission);
+        const IRadioFrame *radioFrame = communicationCache->getCachedFrame(transmission);
+        communicationCache->removeCachedFrame(transmission);
         communicationCache->removeTransmission(transmission);
+        fireTransmissionRemoved(transmission);
         delete radioFrame;
         delete transmission;
     }

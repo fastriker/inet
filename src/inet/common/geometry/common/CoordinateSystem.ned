@@ -28,7 +28,7 @@ moduleinterface IGeographicCoordinateSystem
 
 //
 // This module provides a very simple and less accurate geographic coordinate
-// system without using OSG.
+// system without using OSG. It doesn't support orientation
 //
 simple SimpleGeographicCoordinateSystem like IGeographicCoordinateSystem
 {
@@ -50,5 +50,7 @@ simple OsgGeographicCoordinateSystem like IGeographicCoordinateSystem
         double playgroundLatitude @unit(deg); // latitude coordinate of the playground origin
         double playgroundLongitude @unit(deg); // longitude coordinate of the playground origin
         double playgroundAltitude @unit(m) = default(0m); // altitude coordinate of the playground origin
-        double playgroundOrientation @unit(deg) = default(0deg); // orientation of the playground on the map
+        double playgroundHeading @unit(deg) = default(0deg); // heading of the playground
+        double playgroundElevation @unit(deg) = default(0deg); // elevation of the playground
+        double playgroundBank @unit(deg) = default(0deg); // bank of the playground
 }

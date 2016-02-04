@@ -48,12 +48,16 @@ Vec3Array *createCircleVertices(const Coord& center, double radius, int polygonS
 Vec3Array *createAnnulusVertices(const Coord& center, double outerRadius, double innerRadius, int polygonSize);
 
 Geometry *createLineGeometry(const Coord& begin, const Coord& end);
+Geometry *createArrowheadGeometry(const Coord& begin, const Coord& end, double width = 10.0, double height = 20.0);
 Geometry *createPolylineGeometry(const std::vector<Coord>& coords);
 Geometry *createCircleGeometry(const Coord& center, double radius, int polygonSize);
 Geometry *createAnnulusGeometry(const Coord& center, double outerRadius, double innerRadius, int polygonSize);
 Geometry *createQuadGeometry(const Coord& begin, const Coord& end);
 Geometry *createPolygonGeometry(const std::vector<Coord>& points, const Coord& translation = Coord::ZERO);
 
+osg::Node *createArrowhead(const Coord& begin, const Coord &end);
+osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead);
+osg::Node *createPolyline(const std::vector<Coord>& coords, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead);
 osgText::Text *createText(const char *string, const Coord& position, const cFigure::Color& color);
 
 AutoTransform *createAutoTransform(Drawable *drawable, AutoTransform::AutoRotateMode mode, bool autoScaleToScreen, const Coord& position = Coord::ZERO);

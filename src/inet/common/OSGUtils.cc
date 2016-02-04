@@ -102,6 +102,27 @@ Geometry *createLineGeometry(const Coord& begin, const Coord& end)
     return geometry;
 }
 
+Geometry *createArrowheadGeometry(const Coord& begin, const Coord& end, double width, double height)
+{
+    auto geometry = new Geometry();
+    auto vertices = new Vec3Array();
+    Coord direction = end - begin;
+    Vec3 e = Vec3(end.x, end.y, end.z);
+    Vec3 v = Vec3(direction.x, direction.y, direction.z);
+    v.normalize();
+    Vec3 d = v * height;
+    v = v ^ Vec3(0.0, 1.0, 0.0) * (width / 2);
+    vertices->push_back(e);
+    vertices->push_back(e - d + v);
+    vertices->push_back(e - d - v);
+    auto drawArrays = new DrawArrays(PrimitiveSet::TRIANGLES);
+    drawArrays->setFirst(0);
+    drawArrays->setCount(3);
+    geometry->setVertexArray(vertices);
+    geometry->addPrimitiveSet(drawArrays);
+    return geometry;
+}
+
 Geometry *createPolylineGeometry(const std::vector<Coord>& coords)
 {
     auto geometry = new Geometry();
@@ -154,6 +175,43 @@ Geometry *createPolygonGeometry(const std::vector<Coord>& points, const Coord& t
     geometry->setVertexArray(vertices);
     geometry->addPrimitiveSet(new DrawArrays(PrimitiveSet::POLYGON, 0, vertices->size()));
     return geometry;
+}
+
+osg::Node *createArrowhead(const Coord& begin, const Coord &end)
+{
+    auto arrowhead = inet::osg::createArrowheadGeometry(begin - end, Coord::ZERO);
+    auto autoTransform = inet::osg::createAutoTransform(arrowhead, osg::AutoTransform::ROTATE_TO_AXIS, true, end);
+    autoTransform->setNormal(osg::Vec3d(0.0, 0.0, 1.0));
+    autoTransform->setAxis(osg::Vec3d(begin.x - end.x, begin.y - end.y, begin.z - end.z));
+    return autoTransform;
+}
+
+osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead)
+{
+    auto line = inet::osg::createLineGeometry(begin, end);
+    auto geode = new osg::Geode();
+    geode->addDrawable(line);
+    auto group = new osg::Group();
+    group->addChild(geode);
+    if (beginArrowhead)
+        group->addChild(createArrowhead(end, begin));
+    if (endArrowhead)
+        group->addChild(createArrowhead(begin, end));
+    return group;
+}
+
+osg::Node *createPolyline(const std::vector<Coord>& coords, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead)
+{
+    auto line = inet::osg::createPolylineGeometry(coords);
+    auto geode = new osg::Geode();
+    geode->addDrawable(line);
+    auto group = new osg::Group();
+    group->addChild(geode);
+    if (beginArrowhead)
+        group->addChild(createArrowhead(coords[1], coords[0]));
+    if (endArrowhead)
+        group->addChild(createArrowhead(coords[coords.size() -  2], coords[coords.size() - 1]));
+    return group;
 }
 
 osgText::Text *createText(const char *string, const Coord& position, const cFigure::Color& color)

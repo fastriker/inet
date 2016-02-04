@@ -66,11 +66,11 @@ void SceneOsgVisualizerBase::initializeScene()
 
 void SceneOsgVisualizerBase::initializeAxis(double axisLength)
 {
-    auto geode = new osg::Geode();
-    geode->addDrawable(inet::osg::createLineGeometry(Coord::ZERO, Coord(axisLength, 0.0, 0.0)));
-    geode->addDrawable(inet::osg::createLineGeometry(Coord::ZERO, Coord(0.0, axisLength, 0.0)));
-    geode->addDrawable(inet::osg::createLineGeometry(Coord::ZERO, Coord(0.0, 0.0, axisLength)));
-    auto stateSet = inet::osg::createStateSet(cFigure::BLACK, 1.0);
+    auto geode = new osg::Group();
+    geode->addChild(inet::osg::createLine(Coord::ZERO, Coord(axisLength, 0.0, 0.0), cFigure::ARROW_NONE, cFigure::ARROW_BARBED));
+    geode->addChild(inet::osg::createLine(Coord::ZERO, Coord(0.0, axisLength, 0.0), cFigure::ARROW_NONE, cFigure::ARROW_BARBED));
+    geode->addChild(inet::osg::createLine(Coord::ZERO, Coord(0.0, 0.0, axisLength), cFigure::ARROW_NONE, cFigure::ARROW_BARBED));
+    auto stateSet = inet::osg::createStateSet(cFigure::BLACK, 1.0, false);
     geode->setStateSet(stateSet);
     auto scene = inet::osg::getScene(visualizerTargetModule);
     scene->addChild(geode);

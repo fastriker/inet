@@ -22,6 +22,7 @@ import inet.common.geometry.common.OsgGeographicCoordinateSystem;
 import inet.environment.common.PhysicalEnvironment;
 import inet.networklayer.configurator.ipv4.IPv4NetworkConfigurator;
 import inet.node.ethernet.Eth1G;
+import inet.node.inet.AdhocHost;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
 import inet.node.inet.WirelessHost;
@@ -58,9 +59,13 @@ network VisualizationTutorialA
             parameters:
                 @display("p=300,300");
         }
-        client[2]: WirelessHost {
+        car[2]: WirelessHost {
             parameters:
                 @display("p=300,400");
+        }
+        pedestrian[2]: WirelessHost {
+            parameters:
+                @display("p=300,500;i=device/cellphone");
         }
     connections:
         accessPoint.ethg++ <--> Eth1G <--> router.ethg++;

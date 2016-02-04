@@ -45,6 +45,11 @@ void ExampleQoSClassifier::initialize()
 
 void ExampleQoSClassifier::handleMessage(cMessage *msg)
 {
+    // KLUDGE: workaround for the case when an ethernet frame arrives from an
+    // EnternetInterface inside an AccessPoint through a RelayUnit
+    // this will incorrectly set a Ieee802Ctrl on an EthernetIIFrame
+    if (msg->getControlInfo() == nullptr)
+        msg->setControlInfo(new Ieee802Ctrl());
     Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl*>(msg->getControlInfo());
     int userPriority = getUserPriority(msg);
     ctrl->setUserPriority(userPriority);

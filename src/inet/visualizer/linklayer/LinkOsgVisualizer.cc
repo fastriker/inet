@@ -36,15 +36,15 @@ Define_Module(LinkOsgVisualizer);
 
 #ifdef WITH_OSG
 
-LinkOsgVisualizer::OsgLink::OsgLink(osg::Geode *geode, int sourceModuleId, int destinationModuleId) :
+LinkOsgVisualizer::OsgLink::OsgLink(osg::Node *node, int sourceModuleId, int destinationModuleId) :
     Link(sourceModuleId, destinationModuleId),
-    geode(geode)
+    node(node)
 {
 }
 
 LinkOsgVisualizer::OsgLink::~OsgLink()
 {
-    // TODO: delete geode;
+    // TODO: delete node;
 }
 
 void LinkOsgVisualizer::addLink(std::pair<int, int> sourceAndDestination, const Link *link)
@@ -52,44 +52,46 @@ void LinkOsgVisualizer::addLink(std::pair<int, int> sourceAndDestination, const 
     LinkVisualizerBase::addLink(sourceAndDestination, link);
     auto osgLink = static_cast<const OsgLink *>(link);
     auto scene = inet::osg::getScene(visualizerTargetModule);
-    scene->addChild(osgLink->geode);
+    scene->addChild(osgLink->node);
 }
 
 void LinkOsgVisualizer::removeLink(const Link *link)
 {
     LinkVisualizerBase::removeLink(link);
     auto osgLink = static_cast<const OsgLink *>(link);
-    auto geode = osgLink->geode;
-    geode->getParent(0)->removeChild(geode);
+    auto node = osgLink->node;
+    node->getParent(0)->removeChild(node);
 }
 
 const LinkVisualizerBase::Link *LinkOsgVisualizer::createLink(cModule *source, cModule *destination) const
 {
-    auto geode = new osg::Geode();
-    auto drawable = inet::osg::createLineGeometry(getPosition(source), getPosition(destination));
-    geode->addDrawable(drawable);
+    auto sourcePosition = getPosition(source);
+    auto destinationPosition = getPosition(destination);
+    auto node = inet::osg::createLine(sourcePosition, destinationPosition, cFigure::ARROW_NONE, cFigure::ARROW_BARBED);
     auto stateSet = inet::osg::createStateSet(lineColor, 1.0, false);
     stateSet->setMode(GL_LIGHTING, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
     auto lineWidth = new osg::LineWidth();
     lineWidth->setWidth(this->lineWidth);
     stateSet->setAttributeAndModes(lineWidth, osg::StateAttribute::ON);
-    geode->setStateSet(stateSet);
-    return new OsgLink(geode, source->getId(), destination->getId());
+    node->setStateSet(stateSet);
+    return new OsgLink(node, source->getId(), destination->getId());
 }
 
 void LinkOsgVisualizer::setAlpha(const Link *link, double alpha) const
 {
     auto osgLink = static_cast<const OsgLink *>(link);
-    auto geode = osgLink->geode;
-    auto material = static_cast<osg::Material *>(geode->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL));
+    auto node = osgLink->node;
+    auto material = static_cast<osg::Material *>(node->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL));
     material->setAlpha(osg::Material::FRONT_AND_BACK, alpha);
 }
 
 void LinkOsgVisualizer::setPosition(cModule *node, const Coord& position) const
 {
+    return;
     for (auto it : links) {
         auto link = static_cast<const OsgLink *>(it.second);
-        auto geode = link->geode;
+        auto group = static_cast<osg::Group *>(link->node);
+        auto geode = static_cast<osg::Geode *>(group->getChild(0));
         auto geometry = static_cast<osg::Geometry *>(geode->getDrawable(0));
         auto vertices = static_cast<osg::Vec3Array *>(geometry->getVertexArray());
         if (node->getId() == it.first.first)

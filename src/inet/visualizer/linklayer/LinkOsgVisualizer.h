@@ -31,10 +31,10 @@ class INET_API LinkOsgVisualizer : public LinkVisualizerBase
   protected:
     class INET_API OsgLink : public Link {
       public:
-        osg::Geode *geode = nullptr;
+        osg::Node *node = nullptr;
 
       public:
-        OsgLink(osg::Geode *geode, int sourceModuleId, int destinationModuleId);
+        OsgLink(osg::Node *node, int sourceModuleId, int destinationModuleId);
         virtual ~OsgLink();
     };
 
