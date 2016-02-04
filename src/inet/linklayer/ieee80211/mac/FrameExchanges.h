@@ -83,6 +83,7 @@ class INET_API SendMulticastDataFrameExchange : public FrameExchange
         virtual std::string info() const override;
         virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
         virtual Ieee80211Frame *getFirstFrame() override { return dataFrame; }
+        virtual AccessCategory getAc() override { return accessCategory; }
 };
 
 } // namespace ieee80211

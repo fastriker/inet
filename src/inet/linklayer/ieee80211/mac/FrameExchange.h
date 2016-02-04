@@ -69,6 +69,7 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
 
     public:
         FrameExchange(FrameExchangeContext *context, IFinishedCallback *callback);
+        virtual AccessCategory getAc() = 0;
         virtual ~FrameExchange();
 };
 
@@ -122,6 +123,7 @@ class INET_API StepBasedFrameExchange : public FrameExchange
         virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void transmissionComplete() override;
         virtual void handleSelfMessage(cMessage *timer) override;
+        virtual AccessCategory getAc() override { return defaultAccessCategory; }
 };
 
 } // namespace ieee80211

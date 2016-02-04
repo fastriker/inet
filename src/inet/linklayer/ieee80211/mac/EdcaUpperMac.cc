@@ -460,13 +460,8 @@ void EdcaUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 void EdcaUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
 {
     EV_INFO << "Frame exchange finished" << std::endl;
-    // find ac for this frame exchange
-    int numACs = params->isEdcaEnabled() ? 4 : 1;
-    AccessCategory ac = (AccessCategory) -1;
-    for (int i = 0; i < numACs; i++)
-        if (acData[i].frameExchange == what)
-            ac = (AccessCategory)i;
-    ASSERT(ac != -1); // TODO: getAc() ??
+    AccessCategory ac = what->getAc();
+    ASSERT(ac != -1);
     acData[ac].finished = true;
     contention[ac]->channelReleased();
 

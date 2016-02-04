@@ -55,6 +55,7 @@ class INET_API IFrameExchange
         virtual Ieee80211Frame *getFirstFrame() = 0;
         virtual FrameProcessingResult lowerFrameReceived(Ieee80211Frame *frame) = 0;
         virtual void corruptedOrNotForUsFrameReceived() = 0;
+        virtual AccessCategory getAc() = 0;
 };
 
 } // namespace ieee80211
