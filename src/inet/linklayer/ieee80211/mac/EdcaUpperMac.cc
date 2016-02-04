@@ -347,6 +347,7 @@ void EdcaUpperMac::corruptedFrameReceived()
 
 void EdcaUpperMac::channelAccessGranted(int txIndex)
 {
+    EV_INFO << "Channel access granted\n";
     Enter_Method("channelAccessGranted()");
     if (acData[txIndex].frameExchange)
         acData[txIndex].frameExchange->continueFrameExchange();
@@ -356,6 +357,7 @@ void EdcaUpperMac::channelAccessGranted(int txIndex)
 
 void EdcaUpperMac::internalCollision(int txIndex)
 {
+    EV_INFO << "Internal collision occurred\n";
     Enter_Method("internalCollision()");
     if (acData[txIndex].frameExchange) {
         Ieee80211Frame *dataFrame = acData[txIndex].frameExchange->getDataFrame();
@@ -380,11 +382,13 @@ void EdcaUpperMac::internalCollision(int txIndex)
 
 void EdcaUpperMac::startContention(AccessCategory ac)
 {
+    EV_INFO << "Starting the contention\n";
     contention[ac]->startContention(params->getAifsTime(ac), params->getEifsTime(ac), params->getCwMulticast(ac), params->getCwMulticast(ac), params->getSlotTime(), 0, this);
 }
 
 void EdcaUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame *dataFrame, Ieee80211Frame *failedFrame, AccessCategory ac)
 {
+    EV_INFO << "Frame transmission failed\n";
     contention[ac]->channelReleased();
     txRetryHandler[ac]->frameTransmissionFailed(dataFrame, failedFrame); // increments retry counters
     if (txRetryHandler[ac]->isRetryPossible(dataFrame, failedFrame))
@@ -395,6 +399,7 @@ void EdcaUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame 
 
 void EdcaUpperMac::frameTransmissionSucceeded(IFrameExchange* what, Ieee80211Frame* frame, AccessCategory ac)
 {
+    EV_INFO << "Frame transmission succeeded\n";
     // TODO: statistic, log
     txRetryHandler[ac]->frameTransmissionSucceeded(frame);
 }

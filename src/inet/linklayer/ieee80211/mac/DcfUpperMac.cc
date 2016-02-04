@@ -272,6 +272,7 @@ void DcfUpperMac::corruptedFrameReceived()
 
 void DcfUpperMac::channelAccessGranted(int txIndex)
 {
+    EV_INFO << "Channel access granted\n";
     Enter_Method("channelAccessGranted()");
     if (frameExchange)
         frameExchange->continueFrameExchange();
@@ -281,6 +282,7 @@ void DcfUpperMac::channelAccessGranted(int txIndex)
 
 void DcfUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame* dataFrame, Ieee80211Frame *failedFrame, AccessCategory ac)
 {
+    EV_INFO << "Frame transmission failed\n";
     contention[0]->channelReleased();
     txRetryHandler->frameTransmissionFailed(dataFrame, failedFrame); // increments retry counters
     if (txRetryHandler->isRetryPossible(dataFrame, failedFrame))
@@ -292,6 +294,7 @@ void DcfUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame* 
 void DcfUpperMac::frameTransmissionSucceeded(IFrameExchange* what, Ieee80211Frame* frame, AccessCategory ac)
 {
     // TODO: statistic, log
+    EV_INFO << "Frame transmission succeeded\n";
     txRetryHandler->frameTransmissionSucceeded(frame);
 }
 
@@ -360,6 +363,7 @@ void DcfUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
 void DcfUpperMac::startContention()
 {
     // TODO: multicast cw??
+    EV_INFO << "Starting the contention\n";
     contention[0]->startContention(params->getAifsTime(AC_LEGACY), params->getEifsTime(AC_LEGACY), params->getSlotTime(), txRetryHandler->getCw(), this);
 }
 
