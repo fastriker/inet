@@ -54,6 +54,10 @@ class INET_API UpperMacTxRetryHandler
         void resetContentionWindow() { cw = params->getCwMin(ac); }
         int doubleCw(int cw);
         int getRc(Ieee80211Frame* frame, std::map<long int, int>& retryCounter);
+        bool isManagementFrame(Ieee80211Frame *frame);
+        bool isMulticastFrame(Ieee80211Frame *frame);
+        bool isDataFrame(Ieee80211Frame *frame);
+        void multicastFrameTransmitted();
 
     public:
         // The contention window (CW) parameter shall take an initial value of aCWmin.
@@ -63,8 +67,6 @@ class INET_API UpperMacTxRetryHandler
         bool isRetryPossible(Ieee80211Frame* dataFrame, Ieee80211Frame *failedFrame);
         void frameTransmissionSucceeded(Ieee80211Frame* frame);
         void frameTransmissionFailed(Ieee80211Frame *frame, Ieee80211Frame *failedFrame);
-        void multicastFrameTransmitted();
-
         int getCw() { return cw; }
 
 };

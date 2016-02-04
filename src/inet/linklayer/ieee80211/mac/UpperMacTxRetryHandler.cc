@@ -65,6 +65,34 @@ int UpperMacTxRetryHandler::doubleCw(int cw)
     return newCw;
 }
 
+
+bool UpperMacTxRetryHandler::isManagementFrame(Ieee80211Frame* frame)
+{
+    int type = frame->getType();
+    return type >= ST_ASSOCIATIONREQUEST && type <= ST_NOACKACTION;
+}
+
+bool UpperMacTxRetryHandler::isMulticastFrame(Ieee80211Frame* frame)
+{
+    if (dynamic_cast<Ieee80211OneAddressFrame*>(frame))
+    {
+        Ieee80211OneAddressFrame *oneAddressFrame = dynamic_cast<Ieee80211OneAddressFrame*>(frame);
+        return oneAddressFrame->getReceiverAddress().isBroadcast();
+    }
+    return false;
+}
+
+void UpperMacTxRetryHandler::multicastFrameTransmitted()
+{
+    resetStationLrc();
+    resetStationSrc();
+}
+
+bool UpperMacTxRetryHandler::isDataFrame(Ieee80211Frame* frame)
+{
+    return frame->getType() == ST_DATA || frame->getType() == ST_DATA_WITH_QOS;
+}
+
 //
 // This SRC and the SSRC shall be reset when a MAC frame of length less than or equal
 // to dot11RTSThreshold succeeds for that MPDU of type Data or MMPDU.
@@ -88,15 +116,11 @@ int UpperMacTxRetryHandler::doubleCw(int cw)
 
 void UpperMacTxRetryHandler::frameTransmissionSucceeded(Ieee80211Frame* frame)
 {
-    bool isGroupAddr = false;
-    if (dynamic_cast<Ieee80211OneAddressFrame*>(frame))
-    {
-        Ieee80211OneAddressFrame *oneAddressFrame = dynamic_cast<Ieee80211OneAddressFrame*>(frame);
-        isGroupAddr = oneAddressFrame->getReceiverAddress().isBroadcast();
-    }
-    if (frame->getType() == ST_RTS)
+    if (isMulticastFrame(frame))
+        multicastFrameTransmitted();
+    else if (frame->getType() == ST_RTS)
         resetStationSrc();
-    else if (frame->getType() == ST_DATA || frame->getType() == ST_DATA_WITH_QOS || isGroupAddr)
+    else if (isDataFrame(frame) || isManagementFrame(frame))
     {
         if (frame->getByteLength() >= params->getRtsThreshold())
             resetStationLrc();
@@ -108,12 +132,6 @@ void UpperMacTxRetryHandler::frameTransmissionSucceeded(Ieee80211Frame* frame)
     else
         throw cRuntimeError("frameTransmissionSucceeded(): Unknown frame type = %d", frame->getType());
 
-}
-
-void UpperMacTxRetryHandler::multicastFrameTransmitted()
-{
-    resetStationLrc();
-    resetStationSrc();
 }
 
 //
