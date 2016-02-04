@@ -57,7 +57,7 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
         ITx *tx;
         IRx *rx;
         IStatistics *statistics;
-        IFinishedCallback *upperMac = nullptr;
+        IFrameExchangeCallback *upperMac = nullptr;
 
     protected:
         virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs);
@@ -68,7 +68,7 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
         virtual void corruptedOrNotForUsFrameReceived() override;
 
     public:
-        FrameExchange(FrameExchangeContext *context, IFinishedCallback *callback);
+        FrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback);
         virtual AccessCategory getAc() = 0;
         virtual ~FrameExchange();
 };
@@ -113,7 +113,7 @@ class INET_API StepBasedFrameExchange : public FrameExchange
         static const char *operationFunctionName(Operation operation);
 
     public:
-        StepBasedFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, int txIndex, AccessCategory accessCategory);
+        StepBasedFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, int txIndex, AccessCategory accessCategory);
         virtual ~StepBasedFrameExchange();
         std::string info() const override;
         virtual void startFrameExchange() override;

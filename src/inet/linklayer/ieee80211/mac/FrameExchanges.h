@@ -38,7 +38,7 @@ class INET_API SendDataWithAckFrameExchange : public StepBasedFrameExchange
         virtual FrameProcessingResult processReply(int step, Ieee80211Frame *frame) override;
         virtual void processTimeout(int step) override;
     public:
-        SendDataWithAckFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendDataWithAckFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendDataWithAckFrameExchange();
         virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
         virtual Ieee80211Frame *getFirstFrame() override { return dataFrame; }
@@ -58,7 +58,7 @@ class INET_API SendDataWithRtsCtsFrameExchange : public StepBasedFrameExchange
         virtual void transmissionFailed(Ieee80211Frame *dataFrame, Ieee80211Frame *failedFrame);
 
     public:
-        SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendDataWithRtsCtsFrameExchange();
         virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
         virtual Ieee80211Frame *getFirstFrame() override { return rtsFrame; }
@@ -73,7 +73,7 @@ class INET_API SendMulticastDataFrameExchange : public FrameExchange
         AccessCategory accessCategory;
 
     public:
-        SendMulticastDataFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendMulticastDataFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendMulticastDataFrameExchange();
         virtual void startFrameExchange() override;
         virtual void continueFrameExchange() override;

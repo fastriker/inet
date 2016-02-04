@@ -27,7 +27,7 @@
 namespace inet {
 namespace ieee80211 {
 
-FrameExchange::FrameExchange(FrameExchangeContext *context, IFinishedCallback *callback) :
+FrameExchange::FrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback) :
     MacPlugin(context->ownerModule),
     params(context->params),
     utils(context->utils),
@@ -69,7 +69,7 @@ void FrameExchange::reportFailure()
     upperMac->frameExchangeFinished(this, false);    // may delete *this* FrameExchange object!
 }
 
-StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, int txIndex, AccessCategory accessCategory) :
+StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, int txIndex, AccessCategory accessCategory) :
     FrameExchange(context, callback), defaultTxIndex(txIndex), defaultAccessCategory(accessCategory)
 {
 }

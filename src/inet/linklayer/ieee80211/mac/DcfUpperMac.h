@@ -53,7 +53,7 @@ class IMsduAggregation;
 /**
  * UpperMac for DCF mode.
  */
-class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public IContentionCallback, protected IFrameExchange::IFinishedCallback
+class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public IContentionCallback, protected IFrameExchange::IFrameExchangeCallback
 {
     public:
         typedef std::list<Ieee80211DataOrMgmtFrame*> Ieee80211DataOrMgmtFrameList;

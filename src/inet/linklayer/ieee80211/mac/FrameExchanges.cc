@@ -33,7 +33,7 @@ using namespace inet::utils;
 namespace inet {
 namespace ieee80211 {
 
-SendDataWithAckFrameExchange::SendDataWithAckFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
+SendDataWithAckFrameExchange::SendDataWithAckFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
     StepBasedFrameExchange(context, callback, txIndex, accessCategory), dataFrame(dataFrame)
 {
     dataFrame->setDuration(params->getSifsTime() + utils->getAckDuration());
@@ -104,7 +104,7 @@ void SendDataWithAckFrameExchange::transmissionFailed()
 
 //------------------------------
 
-SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
+SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
     StepBasedFrameExchange(context, callback, txIndex, accessCategory), dataFrame(dataFrame)
 {
     dataFrame->setDuration(params->getSifsTime() + utils->getAckDuration());
@@ -178,7 +178,7 @@ void SendDataWithRtsCtsFrameExchange::transmissionFailed(Ieee80211Frame* dataFra
 
 //------------------------------
 
-SendMulticastDataFrameExchange::SendMulticastDataFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
+SendMulticastDataFrameExchange::SendMulticastDataFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
     FrameExchange(context, callback), dataFrame(dataFrame), txIndex(txIndex), accessCategory(accessCategory)
 {
     ASSERT(utils->isBroadcastOrMulticast(dataFrame));

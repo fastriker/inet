@@ -36,12 +36,12 @@ class Ieee80211Frame;
 class INET_API IFrameExchange
 {
     public:
-        class INET_API IFinishedCallback { // TODO:  change name IFrameExchangeCallback
+        class INET_API IFrameExchangeCallback {
             public:
                 virtual void frameExchangeFinished(IFrameExchange *what, bool successful) = 0;
                 virtual void frameTransmissionFailed(IFrameExchange *what, Ieee80211Frame *dataFrame, Ieee80211Frame *failedFrame, AccessCategory ac) = 0;
                 virtual void frameTransmissionSucceeded(IFrameExchange *what, Ieee80211Frame *frame, AccessCategory ac) = 0;
-                virtual ~IFinishedCallback() {}
+                virtual ~IFrameExchangeCallback() {}
         };
 
         enum FrameProcessingResult { IGNORED, PROCESSED_DISCARD, PROCESSED_KEEP };
