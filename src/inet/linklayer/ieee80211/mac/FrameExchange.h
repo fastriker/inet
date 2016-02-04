@@ -98,7 +98,7 @@ class INET_API StepBasedFrameExchange : public FrameExchange
         virtual void expectFullReplyWithin(simtime_t timeout);  // may invoke processReply() and processTimeout()
         virtual void expectReplyRxStartWithin(simtime_t timeout); // may invoke processReply() and processTimeout()
         virtual void gotoStep(int step); // ~setNextStep()
-        virtual void fail();
+        virtual void giveUp();
         virtual void succeed();
 
         // internal

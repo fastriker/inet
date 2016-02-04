@@ -80,7 +80,7 @@ void Rx::lowerFrameReceived(Ieee80211Frame *frame)
         delete frame;
         for (int i = 0; contention[i]; i++)
             contention[i]->corruptedFrameReceived();
-        upperMac->corruptedFrameReceived();
+        upperMac->corruptedOrNotForUsFrameReceived();
         statistics->erroneousFrameReceived();
     }
 }

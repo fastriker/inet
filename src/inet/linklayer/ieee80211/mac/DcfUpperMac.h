@@ -103,12 +103,15 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         void sendCts(Ieee80211RTSFrame *frame);
         void cleanupFrameExchanges();
 
+        virtual bool processOrDeleteLowerFrame(Ieee80211Frame *frame);
+        virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
+
     public:
         DcfUpperMac();
         virtual ~DcfUpperMac();
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
-        virtual void corruptedFrameReceived() override;
+        virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void transmissionComplete(ITxCallback *callback) override;
         virtual void channelAccessGranted(int txIndex) override;
         virtual void internalCollision(int txIndex) override;

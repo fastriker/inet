@@ -265,37 +265,10 @@ void EdcaUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
     if (!utils->isForUs(frame)) {
         EV_INFO << "This frame is not for us" << std::endl;
         delete frame;
-        int numACs = params->isEdcaEnabled() ? 4 : 1;
-        for (int i = 0; i < numACs; i++)
-            if (acData[i].frameExchange)
-            {
-                //check_and_cast<FrameExchange*>(acData[i].frameExchange);
-                acData[i].frameExchange->corruptedOrNotForUsFrameReceived();
-            }
+        corruptedOrNotForUsFrameReceived();
     }
-    else {
-        // show frame to ALL ongoing frame exchanges
-        int numACs = params->isEdcaEnabled() ? 4 : 1;
-        bool alreadyProcessed = false;
-        bool shouldDelete = false;
-        for (int i = 0; i < numACs; i++) {
-            if (acData[i].frameExchange) {
-                IFrameExchange::FrameProcessingResult result = acData[i].frameExchange->lowerFrameReceived(frame);
-                bool justProcessed = (result != IFrameExchange::IGNORED);
-                ASSERT(!alreadyProcessed || !justProcessed); // ensure it's not double-processed
-                if (justProcessed) {
-                    alreadyProcessed = true;
-                    shouldDelete = (result == IFrameExchange::PROCESSED_DISCARD);
-                }
-            }
-        }
-
-        if (alreadyProcessed) {
-            // jolly good, nothing more to do
-            if (shouldDelete)
-                delete frame;
-        }
-        else if (Ieee80211RTSFrame *rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frame)) {
+    else if (processOrDeleteLowerFrame(frame)) {
+        if (Ieee80211RTSFrame *rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frame)) {
             sendCts(rtsFrame);
             delete rtsFrame;
         }
@@ -309,16 +282,8 @@ void EdcaUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
             else {
                 // FIXME: replace with QoS data frame
                 Ieee80211DataFrame *dataFrame = dynamic_cast<Ieee80211DataFrame*>(dataOrMgmtFrame);
-                if (dataFrame && dataFrame->getAMsduPresent())
-                {
-                    EV_INFO << "MSDU aggregated frame received. Exploding it...\n";
-                    auto frames = msduAggregator->explodeAggregateFrame(dataFrame);
-                    EV_INFO << "It contained the following subframes:\n";
-                    for (Ieee80211DataFrame *frame : frames)
-                    {
-                        EV_INFO << frame << "\n";
-                        mac->sendUp(frame);
-                    }
+                if (dataFrame && dataFrame->getAMsduPresent()) {
+                    explodeAggregatedFrame(dataFrame);
                 }
                 else if (!utils->isFragment(dataOrMgmtFrame))
                     mac->sendUp(dataOrMgmtFrame);
@@ -337,12 +302,50 @@ void EdcaUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
     cleanupFrameExchanges();
 }
 
-void EdcaUpperMac::corruptedFrameReceived()
+void EdcaUpperMac::corruptedOrNotForUsFrameReceived()
 {
     int numACs = params->isEdcaEnabled() ? 4 : 1;
     for (int i = 0; i < numACs; i++)
         if (acData[i].frameExchange)
             acData[i].frameExchange->corruptedOrNotForUsFrameReceived();
+}
+
+void EdcaUpperMac::explodeAggregatedFrame(Ieee80211DataFrame* dataFrame)
+{
+    EV_INFO << "MSDU aggregated frame received. Exploding it...\n";
+    auto frames = msduAggregator->explodeAggregateFrame(dataFrame);
+    EV_INFO << "It contained the following subframes:\n";
+    for (Ieee80211DataFrame *frame : frames)
+    {
+        EV_INFO << frame << "\n";
+        mac->sendUp(frame);
+    }
+}
+
+bool EdcaUpperMac::processOrDeleteLowerFrame(Ieee80211Frame *frame)
+{
+    // show frame to ALL ongoing frame exchanges
+    int numACs = params->isEdcaEnabled() ? 4 : 1;
+    bool alreadyProcessed = false;
+    bool shouldDelete = false;
+    for (int i = 0; i < numACs; i++) {
+        if (acData[i].frameExchange) {
+            IFrameExchange::FrameProcessingResult result = acData[i].frameExchange->lowerFrameReceived(frame);
+            bool justProcessed = (result != IFrameExchange::IGNORED);
+            ASSERT(!alreadyProcessed || !justProcessed); // ensure it's not double-processed
+            if (justProcessed) {
+                alreadyProcessed = true;
+                shouldDelete = (result == IFrameExchange::PROCESSED_DISCARD);
+            }
+        }
+    }
+    if (alreadyProcessed) {
+        // jolly good, nothing more to do
+        if (shouldDelete)
+            delete frame;
+        return false;
+    }
+    return true;
 }
 
 void EdcaUpperMac::channelAccessGranted(int txIndex)

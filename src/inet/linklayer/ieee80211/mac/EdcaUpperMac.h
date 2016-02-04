@@ -107,14 +107,17 @@ class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, public ICo
         void sendAck(Ieee80211DataOrMgmtFrame *frame);
         void sendCts(Ieee80211RTSFrame *frame);
 
-        void cleanupFrameExchanges();
+        virtual void cleanupFrameExchanges();
+        virtual void corruptedOrNotForUsFrameReceived() override;
+        virtual bool processOrDeleteLowerFrame(Ieee80211Frame *frame);
+        virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
+
 
     public:
         EdcaUpperMac();
         virtual ~EdcaUpperMac();
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
-        virtual void corruptedFrameReceived() override;
         virtual void channelAccessGranted(int txIndex);
         virtual void internalCollision(int txIndex);
         virtual void transmissionComplete(ITxCallback *callback) override;

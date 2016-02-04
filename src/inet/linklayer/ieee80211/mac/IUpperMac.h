@@ -46,7 +46,7 @@ class INET_API IUpperMac
 
         // from Rx:
         virtual void lowerFrameReceived(Ieee80211Frame *frame) = 0;
-        virtual void corruptedFrameReceived() = 0;
+        virtual void corruptedOrNotForUsFrameReceived() = 0;
 
         // from Tx:
         virtual void transmissionComplete(ITxCallback *callback) = 0;

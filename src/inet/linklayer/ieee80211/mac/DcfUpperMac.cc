@@ -211,19 +211,10 @@ void DcfUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
     if (!utils->isForUs(frame)) {
         EV_INFO << "This frame is not for us" << std::endl;
         delete frame;
-        if (frameExchange)
-            frameExchange->corruptedOrNotForUsFrameReceived();
+        corruptedOrNotForUsFrameReceived();
     }
-    else {
-        // offer frame to ongoing frame exchange
-        IFrameExchange::FrameProcessingResult result = frameExchange ? frameExchange->lowerFrameReceived(frame) : IFrameExchange::IGNORED;
-        bool processed = (result != IFrameExchange::IGNORED);
-        if (processed) {
-            // already processed, nothing more to do
-            if (result == IFrameExchange::PROCESSED_DISCARD)
-                delete frame;
-        }
-        else if (Ieee80211RTSFrame *rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frame)) {
+    else if (processOrDeleteLowerFrame(frame)) {
+        if (Ieee80211RTSFrame *rtsFrame = dynamic_cast<Ieee80211RTSFrame *>(frame)) {
             sendCts(rtsFrame);
             delete rtsFrame;
         }
@@ -236,16 +227,8 @@ void DcfUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
             }
             else {
                 Ieee80211DataFrame *dataFrame = dynamic_cast<Ieee80211DataFrame*>(dataOrMgmtFrame);
-                if (dataFrame && dataFrame->getAMsduPresent())
-                {
-                    EV_INFO << "MSDU aggregated frame received. Exploding it...\n";
-                    auto frames = msduAggregator->explodeAggregateFrame(dataFrame);
-                    EV_INFO << "It contained the following subframes:\n";
-                    for (Ieee80211DataFrame *frame : frames)
-                    {
-                        EV_INFO << frame << "\n";
-                        mac->sendUp(frame);
-                    }
+                if (dataFrame && dataFrame->getAMsduPresent()) {
+                    explodeAggregatedFrame(dataFrame);
                 }
                 else if (!utils->isFragment(dataOrMgmtFrame))
                     mac->sendUp(dataOrMgmtFrame);
@@ -264,7 +247,7 @@ void DcfUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
     cleanupFrameExchanges();
 }
 
-void DcfUpperMac::corruptedFrameReceived()
+void DcfUpperMac::corruptedOrNotForUsFrameReceived()
 {
     if (frameExchange)
         frameExchange->corruptedOrNotForUsFrameReceived();
@@ -305,6 +288,32 @@ void DcfUpperMac::cleanupFrameExchanges()
         delete frameExchange;
         frameExchange = nullptr;
         finished = false;
+    }
+}
+
+bool DcfUpperMac::processOrDeleteLowerFrame(Ieee80211Frame* frame)
+{
+    // offer frame to ongoing frame exchange
+    IFrameExchange::FrameProcessingResult result = frameExchange ? frameExchange->lowerFrameReceived(frame) : IFrameExchange::IGNORED;
+    bool processed = (result != IFrameExchange::IGNORED);
+    if (processed) {
+        // already processed, nothing more to do
+        if (result == IFrameExchange::PROCESSED_DISCARD)
+            delete frame;
+        return false;
+    }
+    return true;
+}
+
+void DcfUpperMac::explodeAggregatedFrame(Ieee80211DataFrame* dataFrame)
+{
+    EV_INFO << "MSDU aggregated frame received. Exploding it...\n";
+    auto frames = msduAggregator->explodeAggregateFrame(dataFrame);
+    EV_INFO << "It contained the following subframes:\n";
+    for (Ieee80211DataFrame *frame : frames)
+    {
+        EV_INFO << frame << "\n";
+        mac->sendUp(frame);
     }
 }
 

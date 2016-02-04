@@ -270,7 +270,7 @@ void StepBasedFrameExchange::continueFrameExchange()
 void StepBasedFrameExchange::abortFrameExchange()
 {
     //statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, longRetryCount); // TOOD: fix longRetryCount, dataFrame
-    fail(); // TODO: giveUp
+    giveUp();
 }
 
 void StepBasedFrameExchange::transmitFrame(Ieee80211Frame *frame)
@@ -307,7 +307,7 @@ void StepBasedFrameExchange::gotoStep(int step)
     gotoTarget = step;
 }
 
-void StepBasedFrameExchange::fail()
+void StepBasedFrameExchange::giveUp()
 {
     setOperation(FAIL);
     status = FAILED;
