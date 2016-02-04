@@ -325,8 +325,8 @@ void StepBasedFrameExchange::setOperation(Operation newOperation)
 {
     if (status != INPROGRESS)
         throw cRuntimeError(this, "cannot do operation %s: frame exchange already terminated (%s)", operationFunctionName(newOperation), statusName(status));
-    /*if (operation != NONE)
-        throw cRuntimeError(this, "only one operation is permitted per step: cannot do %s after %s, in doStep(step=%d)", operationFunctionName(newOperation), operationFunctionName(operation), step);*/
+    if (operation != NONE && operation != GOTO_STEP)
+        throw cRuntimeError(this, "only one operation is permitted per step: cannot do %s after %s, in doStep(step=%d)", operationFunctionName(newOperation), operationFunctionName(operation), step);
     operation = newOperation;
 }
 
