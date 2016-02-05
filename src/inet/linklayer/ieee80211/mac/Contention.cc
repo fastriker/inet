@@ -105,13 +105,14 @@ void Contention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, int c
 
     int cw = computeCw(cwMin, cwMax, retryCount);
     backoffSlots = intrand(cw + 1);
-    handleWithFSM(START, nullptr);
-}
-
 #ifdef NS3_VALIDATION
     static const char *AC[] = {"AC_BE", "AC_BK", "AC_VI", "AC_VO"};
     std::cout << "GB: " << "ac = " << AC[getIndex()] << ", cw = " << cw << ", slots = " << backoffSlots << ", nth = " << getRNG(0)->getNumbersDrawn() << std::endl;
 #endif
+
+    handleWithFSM(START, nullptr);
+}
+
 void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTime, int cw, IContentionCallback* callback)
 {
     Enter_Method("startContention()");
@@ -185,10 +186,15 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
                     cancelTransmissionRequest();
                     computeRemainingBackoffSlots();
                     );
+            FSMA_Event_Transition(optimized-internal-collision,
+                    event == INTERNAL_COLLISION && backoffOptimizationDelta != SIMTIME_ZERO,
+                    IFS_AND_BACKOFF,
+                    revokeBackoffOptimization();
+                    );
             FSMA_Event_Transition(Internal-collision,
                     event == INTERNAL_COLLISION,
                     IDLE,
-                    finallyReportInternalCollision = true;
+                    finallyReportInternalCollision = true; lastIdleStartTime = simTime();
                     );
             FSMA_Event_Transition(Use-EIFS,
                     event == CORRUPTED_FRAME_RECEIVED,
@@ -201,7 +207,7 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
             FSMA_Event_Transition(Channel-Released,
                     event == CHANNEL_RELEASED,
                     IDLE,
-                    ;
+                    lastIdleStartTime = simTime();
                     );
             FSMA_Ignore_Event(event==MEDIUM_STATE_CHANGED);
             FSMA_Ignore_Event(event==CORRUPTED_FRAME_RECEIVED);
@@ -301,7 +307,7 @@ void Contention::switchToEifs()
 void Contention::computeRemainingBackoffSlots()
 {
     simtime_t remainingTime = scheduledTransmissionTime - simTime();
-    int remainingSlots = (int)ceil(remainingTime / slotTime);  //TODO this is not accurate
+    int remainingSlots = (remainingTime.raw() + slotTime.raw() - 1) / slotTime.raw();
     if (remainingSlots < backoffSlots) // don't count IFS
         backoffSlots = remainingSlots;
 }
