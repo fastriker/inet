@@ -30,6 +30,8 @@
 #include "inet/networklayer/contract/ipv6/IPv6AddressType.h"
 #include "inet/networklayer/contract/ipv6/IPv6ControlInfo.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
+
 #include "inet/networklayer/contract/IARP.h"
 #include "inet/common/geometry/common/Coord.h"
 #include "inet/routing/extras/base/ControlInfoBreakLink_m.h"
@@ -378,7 +380,7 @@ void ManetRoutingBase::sendToIpOnIface(cPacket *msg, int srcPort, const L3Addres
 
     if (destAddr.getType() == L3Address::MAC)
     {
-        Ieee802Ctrl *ctrl = new Ieee802Ctrl;
+        SimpleLinkLayerControlInfo *ctrl = msg->ensureTag<SimpleLinkLayerControlInfo>();
         //TODO ctrl->setEtherType(...);
         MACAddress macadd = destAddr.toMAC();
         ctrl->setDest(macadd);
@@ -391,7 +393,7 @@ void ManetRoutingBase::sendToIpOnIface(cPacket *msg, int srcPort, const L3Addres
             for (unsigned int i = 0; i<interfaceVector->size()-1; i++)
             {
 // It's necessary to duplicate the the control info message and include the information relative to the interface
-                Ieee802Ctrl *ctrlAux = ctrl->dup();
+                SimpleLinkLayerControlInfo *ctrlAux = ctrl->dup();
                 ie = (*interfaceVector)[i].interfacePtr;
                 cPacket *msgAux = msg->dup();
 // Set the control info to the duplicate packet
@@ -406,7 +408,6 @@ void ManetRoutingBase::sendToIpOnIface(cPacket *msg, int srcPort, const L3Addres
 
         if (ie)
             ctrl->setInterfaceId(ie->getInterfaceId());
-        msg->setControlInfo(ctrl);
         sendDelayed(msg, delay, "to_ip");
         return;
     }

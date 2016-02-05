@@ -22,6 +22,7 @@
 #include "inet/linklayer/ethernet/EtherFrame.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 
 namespace inet {
 
@@ -94,15 +95,15 @@ void EtherEncap::processPacketFromHigherLayer(cPacket *msg)
     // create Ethernet frame, fill it in from Ieee802Ctrl and encapsulate msg in it
     EV_DETAIL << "Encapsulating higher layer packet `" << msg->getName() << "' for MAC\n";
 
-    IMACProtocolControlInfo *controlInfo = check_and_cast<IMACProtocolControlInfo *>(msg->removeControlInfo());
-    Ieee802Ctrl *etherctrl = dynamic_cast<Ieee802Ctrl *>(controlInfo);
-    EtherFrame *frame = nullptr;
+    SimpleLinkLayerControlInfo* controlInfo = msg->getTag<SimpleLinkLayerControlInfo>();
+    Ieee802Ctrl *etherctrl = msg->getTag<Ieee802Ctrl>();
+    EtherFrame *frame = NULL;
 
     if (useSNAP) {
         EtherFrameWithSNAP *snapFrame = new EtherFrameWithSNAP(msg->getName());
 
-        snapFrame->setSrc(controlInfo->getSourceAddress());    // if blank, will be filled in by MAC
-        snapFrame->setDest(controlInfo->getDestinationAddress());
+        snapFrame->setSrc(controlInfo->getSrc());  // if blank, will be filled in by MAC
+        snapFrame->setDest(controlInfo->getDest());
         snapFrame->setOrgCode(0);
         if (etherctrl)
             snapFrame->setLocalcode(etherctrl->getEtherType());
@@ -112,14 +113,13 @@ void EtherEncap::processPacketFromHigherLayer(cPacket *msg)
     else {
         EthernetIIFrame *eth2Frame = new EthernetIIFrame(msg->getName());
 
-        eth2Frame->setSrc(controlInfo->getSourceAddress());    // if blank, will be filled in by MAC
-        eth2Frame->setDest(controlInfo->getDestinationAddress());
+        eth2Frame->setSrc(controlInfo->getSrc());  // if blank, will be filled in by MAC
+        eth2Frame->setDest(controlInfo->getDest());
         if (etherctrl)
             eth2Frame->setEtherType(etherctrl->getEtherType());
         eth2Frame->setByteLength(ETHER_MAC_FRAME_BYTES);
         frame = eth2Frame;
     }
-    delete controlInfo;
 
     frame->encapsulate(msg);
     if (frame->getByteLength() < MIN_ETHERNET_FRAME_BYTES)
@@ -135,14 +135,14 @@ void EtherEncap::processFrameFromMAC(EtherFrame *frame)
     cPacket *higherlayermsg = frame->decapsulate();
 
     // add Ieee802Ctrl to packet
-    Ieee802Ctrl *etherctrl = new Ieee802Ctrl();
-    etherctrl->setSrc(frame->getSrc());
-    etherctrl->setDest(frame->getDest());
-    if (dynamic_cast<EthernetIIFrame *>(frame) != nullptr)
+    Ieee802Ctrl *etherctrl = higherlayermsg->ensureTag<Ieee802Ctrl>();
+    SimpleLinkLayerControlInfo *cInfo = higherlayermsg->ensureTag<SimpleLinkLayerControlInfo>();
+    cInfo->setSrc(frame->getSrc());
+    cInfo->setDest(frame->getDest());
+    if (dynamic_cast<EthernetIIFrame *>(frame) != NULL)
         etherctrl->setEtherType(((EthernetIIFrame *)frame)->getEtherType());
     else if (dynamic_cast<EtherFrameWithSNAP *>(frame) != nullptr)
         etherctrl->setEtherType(((EtherFrameWithSNAP *)frame)->getLocalcode());
-    higherlayermsg->setControlInfo(etherctrl);
 
     EV_DETAIL << "Decapsulating frame `" << frame->getName() << "', passing up contained packet `"
               << higherlayermsg->getName() << "' to higher layer\n";
@@ -158,12 +158,10 @@ void EtherEncap::processFrameFromMAC(EtherFrame *frame)
 
 void EtherEncap::handleSendPause(cMessage *msg)
 {
-    Ieee802Ctrl *etherctrl = dynamic_cast<Ieee802Ctrl *>(msg->removeControlInfo());
+    Ieee802Ctrl *etherctrl = msg->getTag<Ieee802Ctrl>();
     if (!etherctrl)
         throw cRuntimeError("PAUSE command `%s' from higher layer received without Ieee802Ctrl", msg->getName());
     int pauseUnits = etherctrl->getPauseUnits();
-    MACAddress dest = etherctrl->getDest();
-    delete etherctrl;
 
     EV_DETAIL << "Creating and sending PAUSE frame, with duration = " << pauseUnits << " units\n";
 
@@ -172,6 +170,8 @@ void EtherEncap::handleSendPause(cMessage *msg)
     sprintf(framename, "pause-%d-%d", getId(), seqNum++);
     EtherPauseFrame *frame = new EtherPauseFrame(framename);
     frame->setPauseTime(pauseUnits);
+    SimpleLinkLayerControlInfo *cInfo = msg->getTag<SimpleLinkLayerControlInfo>();
+    MACAddress dest = cInfo->getDest();
     if (dest.isUnspecified())
         dest = MACAddress::MULTICAST_PAUSE_ADDRESS;
     frame->setDest(dest);

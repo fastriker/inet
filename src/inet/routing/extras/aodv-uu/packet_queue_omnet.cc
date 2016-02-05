@@ -23,6 +23,7 @@
 #include "inet/routing/extras/aodv-uu/aodv_uu_omnet.h"
 #include "inet/networklayer/ipv4/IPv4Datagram.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 
 namespace inet {
 
@@ -431,14 +432,13 @@ int NS_CLASS packet_queue_set_verdict(struct in_addr dest_addr, int verdict)
                         // now Ip layer decremented again
                         if (isInMacLayer())
                         {
-                            Ieee802Ctrl *ctrl = new Ieee802Ctrl();
-                            L3Address nextHop;
+                            SimpleLinkLayerControlInfo *ctrl = qp->p->ensureTag<SimpleLinkLayerControlInfo>();
+                            ManetAddress nextHop;
                             int iface;
                             double cost;
                             getNextHop(dest_addr.s_addr, nextHop, iface, cost);
                             ctrl->setDest(nextHop.toMAC());
                             //TODO ctrl->setEtherType(...);
-                            qp->p->setControlInfo(ctrl);
                         }
                         /* Apparently, the link layer implementation can't handle
                          * a burst of packets. So to keep ARP happy, buffered

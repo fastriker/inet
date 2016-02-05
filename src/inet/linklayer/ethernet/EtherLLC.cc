@@ -20,6 +20,7 @@
 #include "inet/linklayer/ethernet/EtherFrame.h"
 #include "inet/linklayer/ethernet/Ethernet.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/NodeOperations.h"
 
@@ -137,7 +138,8 @@ void EtherLLC::processPacketFromHigherLayer(cPacket *msg)
     EV << "Encapsulating higher layer packet `" << msg->getName() << "' for MAC\n";
     EV << "Sent from " << getSimulation()->getModule(msg->getSenderModuleId())->getFullPath() << " at " << msg->getSendingTime() << " and was created " << msg->getCreationTime() << "\n";
 
-    Ieee802Ctrl *etherctrl = dynamic_cast<Ieee802Ctrl *>(msg->removeControlInfo());
+    Ieee802Ctrl *etherctrl = msg->getTag<Ieee802Ctrl>();
+    SimpleLinkLayerControlInfo *cInfo = msg->getTag<SimpleLinkLayerControlInfo>();
     if (!etherctrl)
         throw cRuntimeError("packet `%s' from higher layer received without Ieee802Ctrl", msg->getName());
 
@@ -146,9 +148,8 @@ void EtherLLC::processPacketFromHigherLayer(cPacket *msg)
     frame->setControl(0);
     frame->setSsap(etherctrl->getSsap());
     frame->setDsap(etherctrl->getDsap());
-    frame->setDest(etherctrl->getDest());    // src address is filled in by MAC
-    frame->setByteLength(ETHER_MAC_FRAME_BYTES + ETHER_LLC_HEADER_LENGTH);
-    delete etherctrl;
+    frame->setDest(cInfo->getDest()); // src address is filled in by MAC
+    frame->setByteLength(ETHER_MAC_FRAME_BYTES+ETHER_LLC_HEADER_LENGTH);
 
     frame->encapsulate(msg);
     if (frame->getByteLength() < MIN_ETHERNET_FRAME_BYTES)
@@ -173,12 +174,12 @@ void EtherLLC::processFrameFromMAC(EtherFrameWithLLC *frame)
     // decapsulate it and pass up to higher layer
     cPacket *higherlayermsg = frame->decapsulate();
 
-    Ieee802Ctrl *etherctrl = new Ieee802Ctrl();
+    Ieee802Ctrl *etherctrl = higherlayermsg->ensureTag<Ieee802Ctrl>();
+    SimpleLinkLayerControlInfo *cInfo = higherlayermsg->ensureTag<SimpleLinkLayerControlInfo>();
     etherctrl->setSsap(frame->getSsap());
     etherctrl->setDsap(frame->getDsap());
-    etherctrl->setSrc(frame->getSrc());
-    etherctrl->setDest(frame->getDest());
-    higherlayermsg->setControlInfo(etherctrl);
+    cInfo->setSrc(frame->getSrc());
+    cInfo->setDest(frame->getDest());
 
     EV << "Decapsulating frame `" << frame->getName() << "', "
                                                          "passing up contained packet `" << higherlayermsg->getName() << "' "
@@ -203,7 +204,7 @@ int EtherLLC::findPortForSAP(int dsap)
 void EtherLLC::handleRegisterSAP(cMessage *msg)
 {
     int port = msg->getArrivalGate()->getIndex();
-    Ieee802Ctrl *etherctrl = dynamic_cast<Ieee802Ctrl *>(msg->getControlInfo());
+    Ieee802Ctrl *etherctrl = msg->getTag<Ieee802Ctrl>();
     if (!etherctrl)
         throw cRuntimeError("packet `%s' from higher layer received without Ieee802Ctrl", msg->getName());
     int dsap = etherctrl->getDsap();
@@ -221,7 +222,7 @@ void EtherLLC::handleRegisterSAP(cMessage *msg)
 
 void EtherLLC::handleDeregisterSAP(cMessage *msg)
 {
-    Ieee802Ctrl *etherctrl = dynamic_cast<Ieee802Ctrl *>(msg->getControlInfo());
+    Ieee802Ctrl *etherctrl = msg->getTag<Ieee802Ctrl>();
     if (!etherctrl)
         throw cRuntimeError("packet `%s' from higher layer received without Ieee802Ctrl", msg->getName());
     int dsap = etherctrl->getDsap();
@@ -240,7 +241,8 @@ void EtherLLC::handleDeregisterSAP(cMessage *msg)
 
 void EtherLLC::handleSendPause(cMessage *msg)
 {
-    Ieee802Ctrl *etherctrl = dynamic_cast<Ieee802Ctrl *>(msg->getControlInfo());
+    Ieee802Ctrl *etherctrl = msg->getTag<Ieee802Ctrl>();
+    SimpleLinkLayerControlInfo *cInfo = msg->getTag<SimpleLinkLayerControlInfo>();
     if (!etherctrl)
         throw cRuntimeError("PAUSE command `%s' from higher layer received without Ieee802Ctrl", msg->getName());
 
@@ -252,7 +254,7 @@ void EtherLLC::handleSendPause(cMessage *msg)
     sprintf(framename, "pause-%d-%d", getId(), seqNum++);
     EtherPauseFrame *frame = new EtherPauseFrame(framename);
     frame->setPauseTime(pauseUnits);
-    MACAddress dest = etherctrl->getDest();
+    MACAddress dest = cInfo->getDest();
     if (dest.isUnspecified())
         dest = MACAddress::MULTICAST_PAUSE_ADDRESS;
     frame->setDest(dest);

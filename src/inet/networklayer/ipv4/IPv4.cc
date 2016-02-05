@@ -25,6 +25,7 @@
 #include "inet/networklayer/contract/IARP.h"
 #include "inet/networklayer/ipv4/ICMPMessage_m.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/networklayer/ipv4/IIPv4RoutingTable.h"
 #include "inet/networklayer/common/IPSocket.h"
 #include "inet/networklayer/contract/ipv4/IPv4ControlInfo.h"
@@ -259,7 +260,7 @@ void IPv4::preroutingFinish(IPv4Datagram *datagram, const InterfaceEntry *fromIE
 void IPv4::handleIncomingARPPacket(ARPPacket *packet, const InterfaceEntry *fromIE)
 {
     // give it to the ARP module
-    IMACProtocolControlInfo *ctrl = check_and_cast<IMACProtocolControlInfo *>(packet->getControlInfo());
+    SimpleLinkLayerControlInfo* ctrl = packet->getTag<SimpleLinkLayerControlInfo>();
     ctrl->setInterfaceId(fromIE->getInterfaceId());
     EV_INFO << "Sending " << packet << " to arp.\n";
     send(packet, arpOutGate);
@@ -328,7 +329,7 @@ void IPv4::handlePacketFromARP(cPacket *packet)
 {
     EV_INFO << "Received " << packet << " from arp.\n";
     // send out packet on the appropriate interface
-    IMACProtocolControlInfo *ctrl = check_and_cast<IMACProtocolControlInfo *>(packet->getControlInfo());
+    SimpleLinkLayerControlInfo* ctrl = packet->getTag<SimpleLinkLayerControlInfo>();
     InterfaceEntry *destIE = ift->getInterfaceById(ctrl->getInterfaceId());
     sendPacketToNIC(packet, destIE);
 }
@@ -882,10 +883,10 @@ void IPv4::sendPacketToIeee802NIC(cPacket *packet, const InterfaceEntry *ie, con
     delete packet->removeControlInfo();
 
     // add control info with MAC address
-    Ieee802Ctrl *controlInfo = new Ieee802Ctrl();
-    controlInfo->setDest(macAddress);
+    SimpleLinkLayerControlInfo *cInfo = packet->ensureTag<SimpleLinkLayerControlInfo>();
+    cInfo->setDest(macAddress);
+    Ieee802Ctrl *controlInfo = packet->ensureTag<Ieee802Ctrl>();
     controlInfo->setEtherType(etherType);
-    packet->setControlInfo(controlInfo);
 
     sendPacketToNIC(packet, ie);
 }

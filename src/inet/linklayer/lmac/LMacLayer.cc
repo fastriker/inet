@@ -651,12 +651,9 @@ LMacFrame *LMacLayer::encapsMsg(cPacket *netwPkt)
 
     // copy dest address from the Control Info attached to the network
     // message by the network layer
-    IMACProtocolControlInfo *cInfo = check_and_cast<IMACProtocolControlInfo *>(netwPkt->removeControlInfo());
-    EV_DETAIL << "CInfo removed, mac addr=" << cInfo->getDestinationAddress() << endl;
-    pkt->setDestAddr(cInfo->getDestinationAddress());
-
-    //delete the control info
-    delete cInfo;
+    SimpleLinkLayerControlInfo* cInfo = netwPkt->getTag<SimpleLinkLayerControlInfo>();
+    EV_DETAIL << "CInfo removed, mac addr=" << cInfo->getDest() << endl;
+    pkt->setDestAddr(cInfo->getDest());
 
     //set the src address to own mac address (nic module getId())
     pkt->setSrcAddr(address);

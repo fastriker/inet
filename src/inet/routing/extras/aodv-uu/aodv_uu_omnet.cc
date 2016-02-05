@@ -39,6 +39,7 @@
 #include "inet/networklayer/common/L3Address.h"
 #include "inet/routing/extras/base/ControlManetRouting_m.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/routing/extras/aodv-uu/aodv_uu_omnet.h"
 
 namespace inet {
@@ -552,19 +553,14 @@ void NS_CLASS handleMessage (cMessage *msg)
             else
             {
                 ipDgram = (IPv4Datagram*) control->decapsulate();
-                cObject * ctrl = ipDgram->removeControlInfo();
+                SimpleLinkLayerControlInfo *ctrl = ipDgram->getTag<SimpleLinkLayerControlInfo>();
                 unsigned int ifindex = NS_IFINDEX;  /* Always use ns interface */
                 if (ctrl)
                 {
-                    if (dynamic_cast<Ieee802Ctrl*> (ctrl))
-                    {
-                        Ieee802Ctrl *ieeectrl = static_cast<Ieee802Ctrl*> (ctrl);
-                        L3Address address(ieeectrl->getDest());
-                        int index = getWlanInterfaceIndexByAddress(address);
-                        if (index!=-1)
-                            ifindex = index;
-                    }
-                    delete ctrl;
+                    ManetAddress address(ctrl->getDest());
+                    int index = getWlanInterfaceIndexByAddress(address);
+                    if (index!=-1)
+                        ifindex = index;
                 }
                 EV_INFO << "Aodv rec datagram  " << ipDgram->getName() << " with dest=" << ipDgram->getDestAddress().str() << "\n";
                 processPacket(ipDgram,ifindex);   // Data path
@@ -607,13 +603,13 @@ void NS_CLASS handleMessage (cMessage *msg)
             aodvMsg = check_and_cast<AODV_msg *>(msg_aux);
             if (!isInMacLayer())
             {
-                INetworkProtocolControlInfo *controlInfo = check_and_cast<INetworkProtocolControlInfo*>(udpPacket->removeControlInfo());
-                src_addr.s_addr = controlInfo->getSourceAddress();
-                aodvMsg->setControlInfo(check_and_cast<cObject *>(controlInfo));
+                SimpleLinkLayerControlInfo *controlInfo = udpPacket->getTag<SimpleLinkLayerControlInfo>();
+                src_addr.s_addr = controlInfo->getSrc();
+                aodvMsg->setControlInfo(controlInfo);
             }
             else
             {
-                Ieee802Ctrl *controlInfo = check_and_cast<Ieee802Ctrl*>(aodvMsg->getControlInfo());
+                SimpleLinkLayerControlInfo *controlInfo = aodvMsg->getTag<SimpleLinkLayerControlInfo>();
                 src_addr.s_addr = L3Address(controlInfo->getSrc());
             }
         }
@@ -864,7 +860,7 @@ void NS_CLASS recvAODVUUPacket(cMessage * msg)
     }
     else
     {
-        Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl *>(msg->getControlInfo());
+        SimpleLinkLayerControlInfo *ctrl = msg->getTag<SimpleLinkLayerControlInfo>();
         src.s_addr = L3Address(ctrl->getSrc());
         dst.s_addr =  L3Address(ctrl->getDest());
     }
@@ -982,10 +978,9 @@ void NS_CLASS processMacPacket(cPacket * p, const L3Address &dest, const L3Addre
             delete p->removeControlInfo();
         if (isInMacLayer())
         {
-            Ieee802Ctrl *ctrl = new Ieee802Ctrl();
-            ctrl->setDest(fwd_rt->next_hop.s_addr.toMAC());
+            SimpleLinkLayerControlInfo *ctrl = p->ensureTag<SimpleLinkLayerControlInfo>();
+            ctrl->setDest(fwd_rt->next_hop.s_addr.getMAC());
             //TODO ctrl->setEtherType(...);
-            p->setControlInfo(ctrl);
         }
 
         send(p, "to_ip");

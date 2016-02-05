@@ -294,9 +294,8 @@ void ARP::processARPPacket(ARPPacket *arp)
     dumpARPPacket(arp);
 
     // extract input port
-    IMACProtocolControlInfo *ctrl = check_and_cast<IMACProtocolControlInfo *>(arp->removeControlInfo());
+    SimpleLinkLayerControlInfo *ctrl = arp->getTag<SimpleLinkLayerControlInfo>();
     InterfaceEntry *ie = ift->getInterfaceById(ctrl->getInterfaceId());
-    delete ctrl;
 
     //
     // Recipe a'la RFC 826:

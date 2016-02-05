@@ -17,6 +17,8 @@
 
 #include "inet/linklayer/ieee80211/mgmt/Ieee80211MgmtAPBase.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
+
 #include <string.h>
 
 #ifdef WITH_ETHERNET
@@ -81,16 +83,13 @@ void Ieee80211MgmtAPBase::sendToUpperLayer(Ieee80211DataFrame *frame)
 
         case ENCAP_DECAP_TRUE: {
             cPacket *payload = frame->decapsulate();
-            Ieee802Ctrl *ctrl = new Ieee802Ctrl();
-            ctrl->setSrc(frame->getTransmitterAddress());
-            ctrl->setDest(frame->getAddress3());
-            int tid = frame->getTid();
-            if (tid < 8)
-                ctrl->setUserPriority(tid); // TID values 0..7 are UP
+                Ieee802Ctrl *ctrl = payload->ensureTag<Ieee802Ctrl>();
+                SimpleLinkLayerControlInfo *cInfo = payload->ensureTag<SimpleLinkLayerControlInfo>();
+                cInfo->setSrc(frame->getTransmitterAddress());
+                cInfo->setDest(frame->getAddress3());
             Ieee80211DataFrameWithSNAP *frameWithSNAP = dynamic_cast<Ieee80211DataFrameWithSNAP *>(frame);
             if (frameWithSNAP)
                 ctrl->setEtherType(frameWithSNAP->getEtherType());
-            payload->setControlInfo(ctrl);
             delete frame;
             outFrame = payload;
         }
@@ -179,13 +178,14 @@ Ieee80211DataFrame *Ieee80211MgmtAPBase::encapsulate(cPacket *msg)
             break;
 
         case ENCAP_DECAP_TRUE: {
-            Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl *>(msg->removeControlInfo());
+            Ieee802Ctrl *ctrl = msg->getTag<Ieee802Ctrl>();
+            SimpleLinkLayerControlInfo *cInfo = msg->getTag<SimpleLinkLayerControlInfo>();
             Ieee80211DataFrameWithSNAP *frame = new Ieee80211DataFrameWithSNAP(msg->getName());
             frame->setFromDS(true);
 
             // copy addresses from ethernet frame (transmitter addr will be set to our addr by MAC)
-            frame->setAddress3(ctrl->getSrc());
-            frame->setReceiverAddress(ctrl->getDest());
+            frame->setAddress3(cInfo->getSrc());
+            frame->setReceiverAddress(cInfo->getDest());
             frame->setEtherType(ctrl->getEtherType());
             int up = ctrl->getUserPriority();
             if (up >= 0) {
@@ -194,7 +194,6 @@ Ieee80211DataFrame *Ieee80211MgmtAPBase::encapsulate(cPacket *msg)
                 frame->addBitLength(QOSCONTROL_BITS);
                 frame->setTid(up);
             }
-            delete ctrl;
 
             // encapsulate payload
             frame->encapsulate(msg);

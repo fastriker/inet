@@ -7,6 +7,7 @@
 #include "inet/networklayer/common/L3AddressResolver.h"
 #include "inet/transportlayer/udp/UDPPacket.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 
 namespace inet {
 
@@ -297,11 +298,10 @@ void Batman::handleMessage(cMessage *msg)
     }
     else
     {
-        Ieee802Ctrl* ctrl = check_and_cast<Ieee802Ctrl*>(msg->removeControlInfo());
+        SimpleLinkLayerControlInfo *ctrl = msg->getTag<SimpleLinkLayerControlInfo>();
         MACAddress srcAddr = ctrl->getSrc();
         neigh = srcAddr;
         if_incoming = if_list[0];
-        delete ctrl;
     }
 
     if (!if_incoming)

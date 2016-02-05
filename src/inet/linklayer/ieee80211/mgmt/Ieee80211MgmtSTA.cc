@@ -21,6 +21,7 @@
 #include "inet/networklayer/common/InterfaceEntry.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/common/NotifierConsts.h"
 #include "inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h"
 #include "inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h"
@@ -222,8 +223,9 @@ Ieee80211DataFrame *Ieee80211MgmtSTA::encapsulate(cPacket *msg)
     frame->setReceiverAddress(assocAP.address);
 
     // destination address is in address3
-    Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl *>(msg->removeControlInfo());
-    frame->setAddress3(ctrl->getDest());
+    Ieee802Ctrl *ctrl = msg->getTag<Ieee802Ctrl>();
+    SimpleLinkLayerControlInfo *cInfo = msg->getTag<SimpleLinkLayerControlInfo>();
+    frame->setAddress3(cInfo->getDest());
     frame->setEtherType(ctrl->getEtherType());
     int up = ctrl->getUserPriority();
     if (up >= 0) {
@@ -232,7 +234,6 @@ Ieee80211DataFrame *Ieee80211MgmtSTA::encapsulate(cPacket *msg)
         frame->addBitLength(QOSCONTROL_BITS);
         frame->setTid(up);
     }
-    delete ctrl;
 
     frame->encapsulate(msg);
     return frame;
@@ -242,16 +243,16 @@ cPacket *Ieee80211MgmtSTA::decapsulate(Ieee80211DataFrame *frame)
 {
     cPacket *payload = frame->decapsulate();
 
-    Ieee802Ctrl *ctrl = new Ieee802Ctrl();
-    ctrl->setSrc(frame->getAddress3());
-    ctrl->setDest(frame->getReceiverAddress());
+    Ieee802Ctrl *ctrl = payload->ensureTag<Ieee802Ctrl>();
+    SimpleLinkLayerControlInfo *cInfo = payload->ensureTag<SimpleLinkLayerControlInfo>();
+    cInfo->setSrc(frame->getAddress3());
+    cInfo->setDest(frame->getReceiverAddress());
     int tid = frame->getTid();
     if (tid < 8)
         ctrl->setUserPriority(tid); // TID values 0..7 are UP
     Ieee80211DataFrameWithSNAP *frameWithSNAP = dynamic_cast<Ieee80211DataFrameWithSNAP *>(frame);
     if (frameWithSNAP)
         ctrl->setEtherType(frameWithSNAP->getEtherType());
-    payload->setControlInfo(ctrl);
 
     delete frame;
     return payload;

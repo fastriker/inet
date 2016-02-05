@@ -23,7 +23,7 @@
 #include "inet/linklayer/ideal/IdealMac.h"
 
 #include "inet/linklayer/ideal/IdealMacFrame_m.h"
-#include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/common/queue/IPassiveQueue.h"
 #include "inet/common/INETUtils.h"
@@ -151,8 +151,8 @@ void IdealMac::startTransmitting(cPacket *msg)
     // if there's any control info, remove it; then encapsulate the packet
     if (lastSentPk)
         throw cRuntimeError("Model error: unacked send");
-    Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl *>(msg->getControlInfo());
-    MACAddress dest = ctrl->getDestinationAddress();
+    SimpleLinkLayerControlInfo *ctrl = msg->getTag<SimpleLinkLayerControlInfo>();
+    MACAddress dest = ctrl->getDest();
     IdealMacFrame *frame = encapsulate(msg);
 
     if (!dest.isBroadcast() && !dest.isMulticast() && !dest.isUnspecified()) {    // unicast
@@ -247,14 +247,13 @@ void IdealMac::acked(IdealMacFrame *frame)
 
 IdealMacFrame *IdealMac::encapsulate(cPacket *msg)
 {
-    Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl *>(msg->removeControlInfo());
+    SimpleLinkLayerControlInfo *ctrl = msg->getTag<SimpleLinkLayerControlInfo>();
     IdealMacFrame *frame = new IdealMacFrame(msg->getName());
     frame->setByteLength(headerLength);
     frame->setSrc(ctrl->getSrc());
     frame->setDest(ctrl->getDest());
     frame->encapsulate(msg);
     frame->setSrcModuleId(getId());
-    delete ctrl;
     return frame;
 }
 
@@ -286,11 +285,9 @@ cPacket *IdealMac::decapsulate(IdealMacFrame *frame)
 {
     // decapsulate and attach control info
     cPacket *packet = frame->decapsulate();
-    Ieee802Ctrl *etherctrl = new Ieee802Ctrl();
-    etherctrl->setSrc(frame->getSrc());
-    etherctrl->setDest(frame->getDest());
-    packet->setControlInfo(etherctrl);
-
+    SimpleLinkLayerControlInfo *ctrl = packet->ensureTag<SimpleLinkLayerControlInfo>();
+    ctrl->setSrc(frame->getSrc());
+    ctrl->setDest(frame->getDest());
     delete frame;
     return packet;
 }

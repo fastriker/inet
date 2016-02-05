@@ -54,6 +54,7 @@ void UDPEchoApp::handleMessageWhenUp(cMessage *msg)
         emit(pkSignal, pk);
 
         // determine its source address/port
+        pk->clearTags();
         UDPDataIndication *ctrl = check_and_cast<UDPDataIndication *>(pk->removeControlInfo());
         L3Address srcAddress = ctrl->getSrcAddr();
         int srcPort = ctrl->getSrcPort();
