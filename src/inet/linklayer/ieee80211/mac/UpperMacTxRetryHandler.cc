@@ -54,7 +54,7 @@ void UpperMacTxRetryHandler::incrementCounter(Ieee80211Frame* frame, std::map<lo
     if (retryCounter.find(id) != retryCounter.end())
         retryCounter[id]++;
     else
-        retryCounter.insert(std::make_pair(id, 0));
+        retryCounter.insert(std::make_pair(id, 1));
 }
 
 int UpperMacTxRetryHandler::doubleCw(int cw)
