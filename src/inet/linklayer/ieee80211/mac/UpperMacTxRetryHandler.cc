@@ -197,8 +197,6 @@ int UpperMacTxRetryHandler::getRc(Ieee80211Frame* frame, std::map<long int, int>
     auto count = retryCounter.find(frame->getTreeId());
     if (count != retryCounter.end())
         return count->second;
-    else
-        throw cRuntimeError("The retry counter entry doesn't exist for message id: ", frame->getId());
     return 0;
 }
 

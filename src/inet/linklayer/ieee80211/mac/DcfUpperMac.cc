@@ -268,6 +268,7 @@ void DcfUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame* 
     EV_INFO << "Frame transmission failed\n";
     contention[0]->channelReleased();
     txRetryHandler->frameTransmissionFailed(dataFrame, failedFrame); // increments retry counters
+    printRetryHandlerLog(what);
     if (txRetryHandler->isRetryPossible(dataFrame, failedFrame))
         startContention();
     else
@@ -279,6 +280,7 @@ void DcfUpperMac::frameTransmissionSucceeded(IFrameExchange* what, Ieee80211Fram
     // TODO: statistic, log
     EV_INFO << "Frame transmission succeeded\n";
     txRetryHandler->frameTransmissionSucceeded(frame);
+    printRetryHandlerLog(what);
 }
 
 void DcfUpperMac::cleanupFrameExchanges()
@@ -358,6 +360,7 @@ void DcfUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, in
     else
         frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
     frameExchange->startFrameExchange();
+    printRetryHandlerLog(frameExchange);
 }
 
 void DcfUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
@@ -387,6 +390,16 @@ void DcfUpperMac::sendCts(Ieee80211RTSFrame *frame)
 {
     Ieee80211CTSFrame *ctsFrame = utils->buildCtsFrame(frame);
     tx->transmitFrame(ctsFrame, params->getSifsTime(), nullptr);
+}
+
+
+void DcfUpperMac::printRetryHandlerLog(IFrameExchange *what)
+{
+    EV_DETAIL << "For the current frame exchange, we have CW = " << txRetryHandler->getCw()
+              << " SRC = " << txRetryHandler->getSrc(what->getDataFrame())
+              << " LRC = " << txRetryHandler->getLrc(what->getDataFrame())
+              << " SSRC = " << txRetryHandler->getStationSrc()
+              << " and SLRC = " << txRetryHandler->getStationLrc() << std::endl;
 }
 
 } // namespace ieee80211

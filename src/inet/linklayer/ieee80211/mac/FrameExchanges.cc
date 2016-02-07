@@ -114,6 +114,7 @@ SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeCo
 SendDataWithRtsCtsFrameExchange::~SendDataWithRtsCtsFrameExchange()
 {
     delete dataFrame;
+    delete rtsFrame;
 }
 
 std::string SendDataWithRtsCtsFrameExchange::info() const
