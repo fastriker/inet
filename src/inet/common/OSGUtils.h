@@ -56,8 +56,8 @@ Geometry *createQuadGeometry(const Coord& begin, const Coord& end);
 Geometry *createPolygonGeometry(const std::vector<Coord>& points, const Coord& translation = Coord::ZERO);
 
 osg::Node *createArrowhead(const Coord& begin, const Coord &end);
-osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead);
-osg::Node *createPolyline(const std::vector<Coord>& coords, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead);
+osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::Arrowhead beginArrowhead, cFigure::Arrowhead endArrowhead);
+osg::Node *createPolyline(const std::vector<Coord>& coords, cFigure::Arrowhead beginArrowhead, cFigure::Arrowhead endArrowhead);
 osgText::Text *createText(const char *string, const Coord& position, const cFigure::Color& color);
 
 AutoTransform *createAutoTransform(Drawable *drawable, AutoTransform::AutoRotateMode mode, bool autoScaleToScreen, const Coord& position = Coord::ZERO);

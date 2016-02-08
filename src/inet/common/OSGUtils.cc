@@ -186,7 +186,7 @@ osg::Node *createArrowhead(const Coord& begin, const Coord &end)
     return autoTransform;
 }
 
-osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead)
+osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::Arrowhead beginArrowhead, cFigure::Arrowhead endArrowhead)
 {
     auto line = inet::osg::createLineGeometry(begin, end);
     auto geode = new osg::Geode();
@@ -200,7 +200,7 @@ osg::Node *createLine(const Coord& begin, const Coord& end, cFigure::ArrowHead b
     return group;
 }
 
-osg::Node *createPolyline(const std::vector<Coord>& coords, cFigure::ArrowHead beginArrowhead, cFigure::ArrowHead endArrowhead)
+osg::Node *createPolyline(const std::vector<Coord>& coords, cFigure::Arrowhead beginArrowhead, cFigure::Arrowhead endArrowhead)
 {
     auto line = inet::osg::createPolylineGeometry(coords);
     auto geode = new osg::Geode();

@@ -62,7 +62,7 @@ const RouteVisualizerBase::Route *RouteCanvasVisualizer::createRoute(const std::
 {
     auto figure = new cPolylineFigure();
     figure->setLineWidth(lineWidth);
-    figure->setEndArrowHead(cFigure::ARROW_BARBED);
+    figure->setEndArrowhead(cFigure::ARROW_BARBED);
     std::vector<cFigure::Point> points;
     for (auto id : path) {
         auto node = getSimulation()->getModule(id);

@@ -63,7 +63,7 @@ const LinkVisualizerBase::Link *LinkCanvasVisualizer::createLink(cModule *source
     auto figure = new cLineFigure();
     figure->setStart(canvasProjection->computeCanvasPoint(getPosition(source)));
     figure->setEnd(canvasProjection->computeCanvasPoint(getPosition(destination)));
-    figure->setEndArrowHead(cFigure::ARROW_BARBED);
+    figure->setEndArrowhead(cFigure::ARROW_BARBED);
     figure->setLineWidth(lineWidth);
     figure->setLineColor(lineColor);
     return new CanvasLink(figure, source->getId(), destination->getId());

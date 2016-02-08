@@ -39,7 +39,7 @@ void NetworkConnectionCanvasVisualizer::createConnection(cModule *startNetworkNo
     lineFigure->setLineWidth(lineWidth);
     lineFigure->setStart(canvasProjection->computeCanvasPoint(getPosition(startNetworkNode)));
     lineFigure->setEnd(canvasProjection->computeCanvasPoint(getPosition(endNetworkNode)));
-    lineFigure->setEndArrowHead(cFigure::ARROW_BARBED);
+    lineFigure->setEndArrowhead(cFigure::ARROW_BARBED);
     visualizerTargetModule->getCanvas()->addFigure(lineFigure);
 }
 

@@ -52,9 +52,9 @@ void SceneCanvasVisualizer::initializeAxis(double axisLength)
     xAxis->setLineWidth(1);
     yAxis->setLineWidth(1);
     zAxis->setLineWidth(1);
-    xAxis->setEndArrowHead(cFigure::ARROW_BARBED);
-    yAxis->setEndArrowHead(cFigure::ARROW_BARBED);
-    zAxis->setEndArrowHead(cFigure::ARROW_BARBED);
+    xAxis->setEndArrowhead(cFigure::ARROW_BARBED);
+    yAxis->setEndArrowhead(cFigure::ARROW_BARBED);
+    zAxis->setEndArrowhead(cFigure::ARROW_BARBED);
     xAxis->setZoomLineWidth(false);
     yAxis->setZoomLineWidth(false);
     zAxis->setZoomLineWidth(false);

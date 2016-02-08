@@ -204,7 +204,7 @@ void MediumCanvasVisualizer::packetReceived(const IReceptionResult *result)
             communicationFigure->setStart(start);
             communicationFigure->setEnd(end);
             communicationFigure->setLineColor(cFigure::BLUE);
-            communicationFigure->setEndArrowHead(cFigure::ARROW_BARBED);
+            communicationFigure->setEndArrowhead(cFigure::ARROW_BARBED);
             communicationFigure->setLineWidth(1);
             communicationFigure->setZoomLineWidth(false);
             communicationTrail->addFigure(communicationFigure);

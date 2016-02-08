@@ -24,7 +24,7 @@ HeatMapFigure::HeatMapFigure(int size, const char *name) :
     cPixmapFigure(name)
 {
     setPixmap(cFigure::Pixmap(size, size));
-    fill(fromColor, 0);
+    fillPixmap(fromColor, 0);
 }
 
 double HeatMapFigure::getHeat(int x, int y)
