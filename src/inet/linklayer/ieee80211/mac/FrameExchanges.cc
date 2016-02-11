@@ -202,11 +202,13 @@ void SendMulticastDataFrameExchange::handleSelfMessage(cMessage *msg)
 
 void SendMulticastDataFrameExchange::startFrameExchange()
 {
-    tx->transmitFrame(dupPacketAndControlInfo(dataFrame), SIMTIME_ZERO, this);
+    EV_DETAIL << "Starting frame exchange " << getClassName() << std::endl;
+    tx->transmitFrame(dupPacketAndControlInfo(dataFrame), this);
 }
 
 void SendMulticastDataFrameExchange::continueFrameExchange()
 {
+    throw cRuntimeError("jaj");
 }
 
 void SendMulticastDataFrameExchange::abortFrameExchange()

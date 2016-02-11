@@ -68,7 +68,7 @@ void DcfUpperMac::initialize()
 
     maxQueueSize = par("maxQueueSize");
     transmissionQueue.setName("txQueue");
-    transmissionQueue.setup(par("prioritizeMulticast") ? (CompareFunc)MacUtils::cmpMgmtOverMulticastOverUnicast : (CompareFunc)MacUtils::cmpMgmtOverData);
+    //transmissionQueue.setup(par("prioritizeMulticast") ? (CompareFunc)MacUtils::cmpMgmtOverMulticastOverUnicast : (CompareFunc)MacUtils::cmpMgmtOverData);
 
     rateSelection = check_and_cast<IRateSelection*>(getModuleByPath(par("rateSelectionModule")));
     msduAggregator = dynamic_cast<IMsduAggregation*>(getModuleByPath(par("msduAggregatorModule")));
@@ -143,7 +143,10 @@ void DcfUpperMac::upperFrameReceived(Ieee80211DataOrMgmtFrame *frame)
     frame->setTransmitterAddress(params->getAddress());
     enqueue(frame);
     if (!contention[0]->isContentionInProgress())
-        startContention();
+    {
+        //startContention();
+        old_startContention(0);
+    }
     cleanupFrameExchanges();
 }
 
@@ -255,7 +258,7 @@ void DcfUpperMac::corruptedOrNotForUsFrameReceived()
 
 void DcfUpperMac::channelAccessGranted(int txIndex)
 {
-    EV_INFO << "Channel access granted\n";
+    EV_INFO << "Channel access granted :)))))))))\n";
     Enter_Method("channelAccessGranted()");
     if (frameExchange)
         frameExchange->continueFrameExchange();
@@ -267,9 +270,14 @@ void DcfUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame* 
 {
     EV_INFO << "Frame transmission failed\n";
     contention[0]->channelReleased();
-    txRetryHandler->frameTransmissionFailed(dataFrame, failedFrame); // increments retry counters
-    if (txRetryHandler->isRetryPossible(dataFrame, failedFrame))
-        startContention();
+    //txRetryHandler->frameTransmissionFailed(dataFrame, failedFrame); // increments retry counters
+    txRetryHandler->old_frameTransmissionFailed(dataFrame, failedFrame, what);
+    if (txRetryHandler->old_isRetryPossible(dataFrame, failedFrame, what))
+    {
+    //if (txRetryHandler->isRetryPossible(dataFrame, failedFrame))
+        //startContention();
+        old_startContention(txRetryHandler->old_getRetryCount(dataFrame, failedFrame, what)); // TODO:
+    }
     else
         frameExchange->abortFrameExchange();
 }
@@ -278,7 +286,8 @@ void DcfUpperMac::frameTransmissionSucceeded(IFrameExchange* what, Ieee80211Fram
 {
     // TODO: statistic, log
     EV_INFO << "Frame transmission succeeded\n";
-    txRetryHandler->frameTransmissionSucceeded(frame);
+    //txRetryHandler->frameTransmissionSucceeded(frame);
+    txRetryHandler->old_frameTransmissionSucceeded(frame);
 }
 
 void DcfUpperMac::cleanupFrameExchanges()
@@ -366,7 +375,10 @@ void DcfUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
     contention[0]->channelReleased();
     finished = true;
     if (!transmissionQueue.empty())
-        startContention();
+    {
+        //startContention();
+        old_startContention(0);
+    }
 }
 
 void DcfUpperMac::startContention()
@@ -387,6 +399,12 @@ void DcfUpperMac::sendCts(Ieee80211RTSFrame *frame)
 {
     Ieee80211CTSFrame *ctsFrame = utils->buildCtsFrame(frame);
     tx->transmitFrame(ctsFrame, params->getSifsTime(), nullptr);
+}
+
+void DcfUpperMac::old_startContention(int retryCount)
+{
+    EV_INFO << "retry count = " << retryCount << endl;
+    contention[0]->startContention(params->getAifsTime(AC_LEGACY), params->getEifsTime(AC_LEGACY), params->getCwMin(AC_LEGACY), params->getCwMax(AC_LEGACY), params->getSlotTime(), retryCount, this);
 }
 
 } // namespace ieee80211

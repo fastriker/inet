@@ -59,7 +59,7 @@ class INET_API Contention : public cSimpleModule, public IContention, protected 
         int cwMax = 0;
         simtime_t slotTime;
         int retryCount = 0;
-        IContentionCallback *callback = nullptr;
+        IContentionCallback *contentionCallback = nullptr;
 
         cFSM fsm;
         simtime_t endEifsTime = SIMTIME_ZERO;

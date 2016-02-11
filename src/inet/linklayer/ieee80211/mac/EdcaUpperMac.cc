@@ -170,7 +170,8 @@ void EdcaUpperMac::upperFrameReceived(Ieee80211DataOrMgmtFrame *frame)
     frame->setTransmitterAddress(params->getAddress());
     enqueue(frame, ac);
     if (!contention[ac]->isContentionInProgress())
-        startContention(ac);
+        //startContention(ac);
+        old_startContention(0, (int)ac, ac);
 
     cleanupFrameExchanges();
 }
@@ -365,17 +366,25 @@ void EdcaUpperMac::internalCollision(int txIndex)
     if (acData[txIndex].frameExchange) {
         Ieee80211Frame *dataFrame = acData[txIndex].frameExchange->getDataFrame();
         Ieee80211Frame *firstFrame = acData[txIndex].frameExchange->getDataFrame();
-        txRetryHandler[txIndex]->frameTransmissionFailed(dataFrame, firstFrame); // Note: failedFrame = firstFrame
-        if (txRetryHandler[txIndex]->isRetryPossible(dataFrame, firstFrame))
-            startContention((AccessCategory)txIndex);
+        txRetryHandler[txIndex]->old_frameTransmissionFailed(dataFrame, firstFrame, acData[txIndex].frameExchange); // Note: failedFrame = firstFrame
+        if (txRetryHandler[txIndex]->old_isRetryPossible(dataFrame, firstFrame, acData[txIndex].frameExchange))
+        {
+            //startContention((AccessCategory)txIndex);
+            old_startContention(txRetryHandler[txIndex]->old_getRetryCount(dataFrame, firstFrame, acData[txIndex].frameExchange), txIndex, (AccessCategory)txIndex);
+        }
         else
             acData[txIndex].frameExchange->abortFrameExchange();
     }
     else {
+        throw cRuntimeError("jaj");
         Ieee80211DataOrMgmtFrame *dataFrame = (Ieee80211DataOrMgmtFrame *)acData[txIndex].transmissionQueue.front();
-        txRetryHandler[txIndex]->frameTransmissionFailed(dataFrame, dataFrame); // increments retry counters
-        if (txRetryHandler[txIndex]->isRetryPossible(dataFrame, dataFrame))
-            startContention((AccessCategory)txIndex);
+        txRetryHandler[txIndex]->old_frameTransmissionFailed(dataFrame, dataFrame, acData[txIndex].frameExchange); // increments retry counters
+        //if (txRetryHandler[txIndex]->isRetryPossible(dataFrame, dataFrame))
+        if (txRetryHandler[txIndex]->old_isRetryPossible(dataFrame, dataFrame, acData[txIndex].frameExchange))
+        {
+            //startContention((AccessCategory)txIndex);
+            old_startContention(txRetryHandler[txIndex]->old_getRetryCount(dataFrame, dataFrame, nullptr), txIndex, (AccessCategory)txIndex);
+        }
         else {
             // delete first frame from queue assuming a SendDataFrameWithAckFrameExchange would have been used
             acData[txIndex].transmissionQueue.pop();
@@ -394,8 +403,12 @@ void EdcaUpperMac::frameTransmissionFailed(IFrameExchange* what, Ieee80211Frame 
     EV_INFO << "Frame transmission failed\n";
     contention[ac]->channelReleased();
     txRetryHandler[ac]->frameTransmissionFailed(dataFrame, failedFrame); // increments retry counters
-    if (txRetryHandler[ac]->isRetryPossible(dataFrame, failedFrame))
-        startContention(ac);
+    //if (txRetryHandler[ac]->isRetryPossible(dataFrame, failedFrame))
+    if (txRetryHandler[ac]->old_isRetryPossible(dataFrame, failedFrame, what))
+    {
+        //startContention(ac);
+        old_startContention(txRetryHandler[ac]->old_getRetryCount(dataFrame, failedFrame, what), (int)ac, ac);
+    }
     else
         what->abortFrameExchange();
 }
@@ -469,7 +482,8 @@ void EdcaUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
     contention[ac]->channelReleased();
 
     if (!acData[ac].transmissionQueue.empty())
-        startContention(ac);
+        //startContention(ac);
+        old_startContention(0, (int) ac, ac);
 }
 
 void EdcaUpperMac::sendAck(Ieee80211DataOrMgmtFrame *frame)
@@ -482,6 +496,11 @@ void EdcaUpperMac::sendCts(Ieee80211RTSFrame *frame)
 {
     Ieee80211CTSFrame *ctsFrame = utils->buildCtsFrame(frame);
     tx->transmitFrame(ctsFrame, params->getSifsTime(), nullptr);
+}
+
+void EdcaUpperMac::old_startContention(int retryCount, int txIndex, AccessCategory ac)
+{
+    contention[txIndex]->startContention(params->getAifsTime(ac), params->getEifsTime(ac), params->getCwMin(ac), params->getCwMax(ac), params->getSlotTime(), retryCount, this);
 }
 
 } // namespace ieee80211

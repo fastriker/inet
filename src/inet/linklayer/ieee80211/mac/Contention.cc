@@ -101,7 +101,7 @@ void Contention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, int c
     this->cwMax = cwMax;
     this->slotTime = slotTime;
     this->retryCount = retryCount;
-    this->callback = callback;
+    this->contentionCallback = callback;
 
     int cw = computeCw(cwMin, cwMax, retryCount);
     backoffSlots = intrand(cw + 1);
@@ -120,7 +120,7 @@ void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTi
     this->ifs = ifs;
     this->eifs = eifs;
     this->slotTime = slotTime;
-    this->callback = callback;
+    this->contentionCallback = callback;
 
     backoffSlots = intrand(cw + 1);
     handleWithFSM(START, nullptr);
@@ -216,9 +216,9 @@ void Contention::handleWithFSM(EventType event, cMessage *msg)
     }
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
-        callback->channelAccessGranted(txIndex);
+        contentionCallback->channelAccessGranted(txIndex);
     if (finallyReportInternalCollision)
-        callback->internalCollision(txIndex);
+        contentionCallback->internalCollision(txIndex);
     if (hasGUI())
         updateDisplayString();
 }

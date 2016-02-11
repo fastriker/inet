@@ -106,6 +106,8 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         virtual bool processOrDeleteLowerFrame(Ieee80211Frame *frame);
         virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
 
+        void old_startContention(int retryCount);
+
     public:
         DcfUpperMac();
         virtual ~DcfUpperMac();

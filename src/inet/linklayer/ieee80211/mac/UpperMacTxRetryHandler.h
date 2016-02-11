@@ -69,6 +69,12 @@ class INET_API UpperMacTxRetryHandler
         void frameTransmissionFailed(Ieee80211Frame *frame, Ieee80211Frame *failedFrame);
         int getCw() { return cw; }
 
+
+        bool old_isRetryPossible(Ieee80211Frame* dataFrame, Ieee80211Frame *failedFrame, IFrameExchange *what);
+        void old_frameTransmissionSucceeded(Ieee80211Frame* frame);
+        void old_frameTransmissionFailed(Ieee80211Frame *frame, Ieee80211Frame *failedFrame, IFrameExchange *what);
+        int old_getRetryCount(Ieee80211Frame* dataFrame, Ieee80211Frame* failedFrame, IFrameExchange *what);
+
 };
 
 } /* namespace ieee80211 */

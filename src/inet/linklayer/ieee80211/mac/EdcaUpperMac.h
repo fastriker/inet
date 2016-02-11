@@ -112,6 +112,7 @@ class INET_API EdcaUpperMac : public cSimpleModule, public IUpperMac, public ICo
         virtual bool processOrDeleteLowerFrame(Ieee80211Frame *frame);
         virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
 
+        void old_startContention(int retryCount, int txIndex, AccessCategory ac);
 
     public:
         EdcaUpperMac();

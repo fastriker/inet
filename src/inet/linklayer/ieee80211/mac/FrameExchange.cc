@@ -263,12 +263,14 @@ void StepBasedFrameExchange::handleTimeout()
 
 void StepBasedFrameExchange::continueFrameExchange()
 {
+    EV_DETAIL << "Continuing frame exchange " << getClassName() << std::endl;
     proceed();
 }
 
 
 void StepBasedFrameExchange::abortFrameExchange()
 {
+    EV_DETAIL << "Aborting frame exchange " << getClassName() << std::endl;
     //statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, longRetryCount); // TOOD: fix longRetryCount, dataFrame
     giveUp();
 }

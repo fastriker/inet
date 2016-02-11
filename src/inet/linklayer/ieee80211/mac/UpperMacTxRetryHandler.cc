@@ -16,6 +16,7 @@
 // 
 
 #include "UpperMacTxRetryHandler.h"
+#include "FrameExchanges.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -198,9 +199,64 @@ int UpperMacTxRetryHandler::getRc(Ieee80211Frame* frame, std::map<long int, int>
     if (count != retryCounter.end())
         return count->second;
     else
-        throw cRuntimeError("The retry counter entry doesn't exist for message id: ", frame->getId());
+        throw cRuntimeError("The retry counter entry doesn't exist for message id: %d", frame->getId());
     return 0;
+}
+
+void UpperMacTxRetryHandler::old_frameTransmissionSucceeded(Ieee80211Frame* frame)
+{
+    return;
+}
+
+bool UpperMacTxRetryHandler::old_isRetryPossible(Ieee80211Frame* dataFrame, Ieee80211Frame* failedFrame, IFrameExchange *what)
+{
+    if (dynamic_cast<SendDataWithRtsCtsFrameExchange *>(what))
+    {
+        if (failedFrame->getType() == ST_RTS)
+            return getRc(dataFrame, shortRetryCounter) < params->getShortRetryLimit();
+        else
+            return getRc(dataFrame, longRetryCounter) < params->getLongRetryLimit();
+    }
+    else if(dynamic_cast<SendDataWithAckFrameExchange*>(what))
+    {
+        return getRc(dataFrame, shortRetryCounter) < params->getShortRetryLimit();
+    }
+    throw cRuntimeError("dfsdfsd");
+}
+
+void UpperMacTxRetryHandler::old_frameTransmissionFailed(Ieee80211Frame* frame, Ieee80211Frame* failedFrame, IFrameExchange *what)
+{
+    if (dynamic_cast<SendDataWithRtsCtsFrameExchange *>(what))
+    {
+        if (failedFrame->getType() == ST_RTS)
+            incrementCounter(frame, shortRetryCounter);
+        else
+            incrementCounter(frame, longRetryCounter);
+    }
+    else if(dynamic_cast<SendDataWithAckFrameExchange*>(what))
+    {
+        incrementCounter(frame, shortRetryCounter);
+    }
+}
+
+int UpperMacTxRetryHandler::old_getRetryCount(Ieee80211Frame* dataFrame, Ieee80211Frame* failedFrame, IFrameExchange *what)
+{
+    if (dynamic_cast<SendDataWithRtsCtsFrameExchange *>(what))
+    {
+        if (failedFrame->getType() == ST_RTS)
+        {
+            return getRc(dataFrame, shortRetryCounter);
+        }
+        else
+            return getRc(dataFrame, longRetryCounter);
+    }
+    else if(dynamic_cast<SendDataWithAckFrameExchange*>(what))
+    {
+        return getRc(dataFrame, shortRetryCounter);
+    }
+    throw cRuntimeError("dfsdfsd");
 }
 
 } /* namespace ieee80211 */
 } /* namespace inet */
+
