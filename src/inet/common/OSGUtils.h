@@ -44,6 +44,9 @@ using namespace ::osg;
 
 Group *getScene(cModule *module);
 
+inline Vec3d toVec3d(const Coord& coord) { return Vec3d(coord.x, coord.y, coord.z); }
+inline Coord toCoord(const Vec3d& vec3d) { return Coord(vec3d.x(), vec3d.y(), vec3d.z()); }
+
 Vec3Array *createCircleVertices(const Coord& center, double radius, int polygonSize);
 Vec3Array *createAnnulusVertices(const Coord& center, double outerRadius, double innerRadius, int polygonSize);
 

@@ -40,7 +40,7 @@ simple MediumOsgVisualizer extends MediumVisualizerBase like IMediumVisualizer
         string networkNodeVisualizerModule = default("^.networkNodeVisualizer"); // module path of the network node visualizer module
 
         double opacityHalfLife @unit(m) = default(100m); // specifies how opacity decreases with distance
-        string signalShape @enum("ring","sphere") = default("ring"); // shape for displaying signals
+        string signalShape @enum("ring", "sphere", "both") = default("ring"); // shape for displaying signals
         string signalPlane @enum("camera","xy","xz","yz") = default("xy"); // plane for 2 dimensional signal shapes
 
         string transmissionPlane @enum("camera","xy","xz","yz") = default("camera"); // plane for transmission image

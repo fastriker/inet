@@ -87,7 +87,6 @@ void LinkOsgVisualizer::setAlpha(const Link *link, double alpha) const
 
 void LinkOsgVisualizer::setPosition(cModule *node, const Coord& position) const
 {
-    return;
     for (auto it : links) {
         auto link = static_cast<const OsgLink *>(it.second);
         auto group = static_cast<osg::Group *>(link->node);
@@ -96,8 +95,13 @@ void LinkOsgVisualizer::setPosition(cModule *node, const Coord& position) const
         auto vertices = static_cast<osg::Vec3Array *>(geometry->getVertexArray());
         if (node->getId() == it.first.first)
             vertices->at(0) = osg::Vec3d(position.x, position.y, position.z);
-        else if (node->getId() == it.first.second)
-            vertices->at(1) = osg::Vec3d(position.x, position.y, position.z);
+        else if (node->getId() == it.first.second) {
+            osg::Vec3d p(position.x, position.y, position.z);
+            vertices->at(1) = p;
+            auto autoTransform = static_cast<osg::AutoTransform *>(group->getChild(1));
+            if (autoTransform != nullptr)
+                autoTransform->setPosition(p);
+        }
         geometry->dirtyBound();
         geometry->dirtyDisplayList();
     }

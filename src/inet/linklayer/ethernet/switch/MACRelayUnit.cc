@@ -19,6 +19,7 @@
 #include "inet/linklayer/ethernet/Ethernet.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/lifecycle/NodeOperations.h"
+#include "inet/common/LayeredProtocolBase.h"
 
 namespace inet {
 
@@ -54,6 +55,7 @@ void MACRelayUnit::handleMessage(cMessage *msg)
     }
     EtherFrame *frame = check_and_cast<EtherFrame *>(msg);
     // Frame received from MAC unit
+    emit(LayeredProtocolBase::packetReceivedFromLowerSignal, datagram);
     handleAndDispatchFrame(frame);
 }
 

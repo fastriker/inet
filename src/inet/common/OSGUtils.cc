@@ -111,7 +111,20 @@ Geometry *createArrowheadGeometry(const Coord& begin, const Coord& end, double w
     Vec3 v = Vec3(direction.x, direction.y, direction.z);
     v.normalize();
     Vec3 d = v * height;
-    v = v ^ Vec3(0.0, 1.0, 0.0) * (width / 2);
+    Vec3 zero;
+    // NOTE: make sure the normal is not parallel with the rotation vector
+    auto cpX = v ^ X_AXIS;
+    auto cpY = v ^ Y_AXIS;
+    auto cpZ = v ^ Z_AXIS;
+    if (cpX != zero)
+        v = cpX;
+    else if (cpY != zero)
+        v = cpY;
+    else if (cpZ != zero)
+        v = cpZ;
+    else
+        ASSERT(false);
+    v *= width / 2;
     vertices->push_back(e);
     vertices->push_back(e - d + v);
     vertices->push_back(e - d - v);
@@ -179,10 +192,13 @@ Geometry *createPolygonGeometry(const std::vector<Coord>& points, const Coord& t
 
 osg::Node *createArrowhead(const Coord& begin, const Coord &end)
 {
-    auto arrowhead = inet::osg::createArrowheadGeometry(begin - end, Coord::ZERO);
+    auto direction = begin - end;
+    auto arrowhead = inet::osg::createArrowheadGeometry(direction, Coord::ZERO);
     auto autoTransform = inet::osg::createAutoTransform(arrowhead, osg::AutoTransform::ROTATE_TO_AXIS, true, end);
-    autoTransform->setNormal(osg::Vec3d(0.0, 0.0, 1.0));
-    autoTransform->setAxis(osg::Vec3d(begin.x - end.x, begin.y - end.y, begin.z - end.z));
+    auto vertexArray = static_cast<osg::Vec3Array *>(arrowhead->getVertexArray());
+    auto normal = (vertexArray->at(0) - vertexArray->at(1)) ^ (vertexArray->at(0) - vertexArray->at(2));
+    autoTransform->setNormal(normal);
+    autoTransform->setAxis(toVec3d(direction));
     return autoTransform;
 }
 

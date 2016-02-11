@@ -71,6 +71,8 @@ class INET_API MediumOsgVisualizer : public MediumVisualizerBase, public cListen
     virtual void initialize(int stage) override;
     virtual void handleMessage(cMessage *message) override;
     virtual void refreshDisplay() const override;
+    virtual void refreshSphereTransmissionNode(const ITransmission *transmission, osg::Node *node) const;
+    virtual void refreshRingTransmissionNode(const ITransmission *transmission, osg::Node *node) const;
 
     virtual osg::Node *getCachedOsgNode(const IRadio *radio) const;
     virtual void setCachedOsgNode(const IRadio *radio, osg::Node *node);
@@ -81,6 +83,8 @@ class INET_API MediumOsgVisualizer : public MediumVisualizerBase, public cListen
     virtual osg::Node *removeCachedOsgNode(const ITransmission *transmission);
 
     virtual osg::Node *createTransmissionNode(const ITransmission *transmission) const;
+    virtual osg::Node *createSphereTransmissionNode(const ITransmission *transmission) const;
+    virtual osg::Node *createRingTransmissionNode(const ITransmission *transmission) const;
 
     virtual void scheduleSignalPropagationUpdateTimer();
 

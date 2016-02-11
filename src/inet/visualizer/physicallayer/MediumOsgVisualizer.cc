@@ -57,6 +57,8 @@ void MediumOsgVisualizer::initialize(int stage)
             signalShape = SIGNAL_SHAPE_RING;
         else if (!strcmp(signalShapeString, "sphere"))
             signalShape = SIGNAL_SHAPE_SPHERE;
+        else if (!strcmp(signalShapeString, "both"))
+            signalShape = SIGNAL_SHAPE_BOTH;
         else
             throw cRuntimeError("Unknown signalShape parameter value: '%s'", signalShapeString);
         signalPlane = par("signalPlane");
@@ -145,85 +147,110 @@ osg::Node *MediumOsgVisualizer::removeCachedOsgNode(const ITransmission *transmi
 
 osg::Node *MediumOsgVisualizer::createTransmissionNode(const ITransmission *transmission) const
 {
+    switch (signalShape) {
+        case SIGNAL_SHAPE_RING:
+            return createRingTransmissionNode(transmission);
+        case SIGNAL_SHAPE_SPHERE:
+            return createSphereTransmissionNode(transmission);
+        case SIGNAL_SHAPE_BOTH: {
+            auto group = new osg::Group();
+            group->addChild(createRingTransmissionNode(transmission));
+            group->addChild(createSphereTransmissionNode(transmission));
+            return group;
+        }
+        default:
+            throw cRuntimeError("Unimplemented signal shape");
+    }
+}
+
+osg::Node *MediumOsgVisualizer::createRingTransmissionNode(const ITransmission *transmission) const
+{
     cFigure::Color color = cFigure::GOOD_DARK_COLORS[transmission->getId() % (sizeof(cFigure::GOOD_DARK_COLORS) / sizeof(cFigure::Color))];
     auto depth = new osg::Depth();
     depth->setWriteMask(false);
     auto stateSet = inet::osg::createStateSet(color, 1.0, false);
     stateSet->setAttributeAndModes(depth, osg::StateAttribute::ON);
     auto transmissionStart = transmission->getStartPosition();
-    switch (signalShape) {
-        case SIGNAL_SHAPE_RING: {
-            // FIXME: there's some random overlapping artifact due to clipping degenerate triangles
-            // FIXME: when the inner radius is very small and the outer radius is very large
-            // FIXME: split up shape into multiple annuluses having more and more vertices, and being wider outwards
-            auto annulus = inet::osg::createAnnulusGeometry(Coord::ZERO, 0, 0, 100);
-            annulus->setStateSet(stateSet);
-            osg::AutoTransform::AutoRotateMode autoRotateMode;
-            if (!strcmp(signalPlane, "xy"))
-                autoRotateMode = osg::AutoTransform::NO_ROTATION;
-            else if (!strcmp(signalPlane, "xz"))
-                autoRotateMode = osg::AutoTransform::ROTATE_TO_AXIS;
-            else if (!strcmp(signalPlane, "yz"))
-                autoRotateMode = osg::AutoTransform::ROTATE_TO_AXIS;
-            else if (!strcmp(signalPlane, "camera"))
-                autoRotateMode = osg::AutoTransform::ROTATE_TO_SCREEN;
-            else
-                throw cRuntimeError("Unknown signalPlane parameter value: '%s'", signalPlane);
-            auto signalAutoTransform = inet::osg::createAutoTransform(annulus, autoRotateMode, false);
-            auto label = new osgText::Text();
-            label->setCharacterSize(18);
-            label->setColor(osg::Vec4(color.red / 255.0 / 2, color.green / 255.0 / 2, color.blue / 255.0 / 2, 1.0));
-            label->setAlignment(osgText::Text::CENTER_BOTTOM);
-            label->setText(transmission->getMacFrame()->getName());
-            auto labelAutoTransform = inet::osg::createAutoTransform(label, osg::AutoTransform::ROTATE_TO_SCREEN, true);
-            labelAutoTransform->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
-            auto positionAttitudeTransform = inet::osg::createPositionAttitudeTransform(transmissionStart, EulerAngles::ZERO);
-            positionAttitudeTransform->setNodeMask(0);
-            positionAttitudeTransform->addChild(signalAutoTransform);
-            positionAttitudeTransform->addChild(labelAutoTransform);
-            if (opacityHalfLife > 0) {
-                auto program = new osg::Program();
-                auto vertexShader = new osg::Shader(osg::Shader::VERTEX);
-                auto fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-                vertexShader->setShaderSource(R"(
-                    varying vec4 verpos;
-                    varying vec4 color;
-                    void main(){
-                        gl_Position = ftransform();
-                        verpos = gl_Vertex;
-                        color = gl_Color;
-                        gl_TexCoord[0]=gl_MultiTexCoord0;
-                    }
-                )");
-                fragmentShader->setShaderSource(R"(
-                    varying vec4 verpos;
-                    varying vec4 color;
-                    uniform float min, max, opacityHalfLife;
-                    void main( void )
-                    {
-                        float alpha = pow(2.0, -length(verpos) / opacityHalfLife);
-                        gl_FragColor = vec4(color.rgb, alpha);
-                    }
-                )");
-                program->addShader(vertexShader);
-                program->addShader(fragmentShader);
-                stateSet->setAttributeAndModes(program, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
-                stateSet->addUniform(new osg::Uniform("min", 0.0f));
-                stateSet->addUniform(new osg::Uniform("max", 200.0f));
-                stateSet->addUniform(new osg::Uniform("opacityHalfLife", (float)opacityHalfLife));
+    // FIXME: there's some random overlapping artifact due to clipping degenerate triangles
+    // FIXME: when the inner radius is very small and the outer radius is very large
+    // FIXME: split up shape into multiple annuluses having more and more vertices, and being wider outwards
+    auto annulus = inet::osg::createAnnulusGeometry(Coord::ZERO, 0, 0, 100);
+    annulus->setStateSet(stateSet);
+    osg::AutoTransform::AutoRotateMode autoRotateMode;
+    if (!strcmp(signalPlane, "xy"))
+        autoRotateMode = osg::AutoTransform::NO_ROTATION;
+    else if (!strcmp(signalPlane, "xz"))
+        autoRotateMode = osg::AutoTransform::ROTATE_TO_AXIS;
+    else if (!strcmp(signalPlane, "yz"))
+        autoRotateMode = osg::AutoTransform::ROTATE_TO_AXIS;
+    else if (!strcmp(signalPlane, "camera"))
+        autoRotateMode = osg::AutoTransform::ROTATE_TO_SCREEN;
+    else
+        throw cRuntimeError("Unknown signalPlane parameter value: '%s'", signalPlane);
+    auto signalAutoTransform = inet::osg::createAutoTransform(annulus, autoRotateMode, false);
+    auto label = new osgText::Text();
+    label->setCharacterSize(18);
+    label->setColor(osg::Vec4(color.red / 255.0 / 2, color.green / 255.0 / 2, color.blue / 255.0 / 2, 1.0));
+    label->setAlignment(osgText::Text::CENTER_BOTTOM);
+    label->setText(transmission->getMacFrame()->getName());
+    auto labelAutoTransform = inet::osg::createAutoTransform(label, osg::AutoTransform::ROTATE_TO_SCREEN, true);
+    labelAutoTransform->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF | osg::StateAttribute::OVERRIDE);
+    auto positionAttitudeTransform = inet::osg::createPositionAttitudeTransform(transmissionStart, EulerAngles::ZERO);
+    positionAttitudeTransform->setNodeMask(0);
+    positionAttitudeTransform->addChild(signalAutoTransform);
+    positionAttitudeTransform->addChild(labelAutoTransform);
+    if (opacityHalfLife > 0) {
+        auto program = new osg::Program();
+        auto vertexShader = new osg::Shader(osg::Shader::VERTEX);
+        auto fragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
+        vertexShader->setShaderSource(R"(
+            varying vec4 verpos;
+            varying vec4 color;
+            void main(){
+                gl_Position = ftransform();
+                verpos = gl_Vertex;
+                color = gl_Color;
+                gl_TexCoord[0]=gl_MultiTexCoord0;
             }
-            return positionAttitudeTransform;
-        }
-        case SIGNAL_SHAPE_SPHERE: {
-            auto drawable = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 1));
-            drawable->setStateSet(stateSet);
-            auto geode = new osg::Geode();
-            geode->addDrawable(drawable);
-            return geode;
-        }
-        default:
-            throw cRuntimeError("Unimplemented signal shape");
+        )");
+        fragmentShader->setShaderSource(R"(
+            varying vec4 verpos;
+            varying vec4 color;
+            uniform float min, max, opacityHalfLife;
+            void main( void )
+            {
+                float alpha = pow(2.0, -length(verpos) / opacityHalfLife);
+                gl_FragColor = vec4(color.rgb, alpha);
+            }
+        )");
+        program->addShader(vertexShader);
+        program->addShader(fragmentShader);
+        stateSet->setAttributeAndModes(program, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        stateSet->addUniform(new osg::Uniform("min", 0.0f));
+        stateSet->addUniform(new osg::Uniform("max", 200.0f));
+        stateSet->addUniform(new osg::Uniform("opacityHalfLife", (float)opacityHalfLife));
     }
+    return positionAttitudeTransform;
+}
+
+osg::Node *MediumOsgVisualizer::createSphereTransmissionNode(const ITransmission *transmission) const
+{
+    auto transmissionStart = transmission->getStartPosition();
+    auto startSphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 1));
+    auto endSphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 1));
+    auto geode = new osg::Geode();
+    geode->addDrawable(startSphere);
+    geode->addDrawable(endSphere);
+    cFigure::Color color = cFigure::GOOD_DARK_COLORS[transmission->getId() % (sizeof(cFigure::GOOD_DARK_COLORS) / sizeof(cFigure::Color))];
+    auto depth = new osg::Depth();
+    depth->setWriteMask(false);
+    auto startStateSet = inet::osg::createStateSet(color, 1.0, false);
+    startStateSet->setAttributeAndModes(depth, osg::StateAttribute::ON);
+    startSphere->setStateSet(startStateSet);
+    auto endStateSet = inet::osg::createStateSet(color, 1.0, false);
+    endStateSet->setAttributeAndModes(depth, osg::StateAttribute::ON);
+    endSphere->setStateSet(endStateSet);
+    return geode;
 }
 
 void MediumOsgVisualizer::radioAdded(const IRadio *radio)
@@ -392,35 +419,22 @@ void MediumOsgVisualizer::packetReceived(const IReceptionResult *result)
 void MediumOsgVisualizer::refreshDisplay() const
 {
     if (displaySignals) {
-        const IPropagation *propagation = radioMedium->getPropagation();
         for (auto transmission : transmissions) {
-            auto transmissionStart = transmission->getStartPosition();
-            double startRadius = propagation->getPropagationSpeed().get() * (simTime() - transmission->getStartTime()).dbl();
-            double endRadius = std::max(0.0, propagation->getPropagationSpeed().get() * (simTime() - transmission->getEndTime()).dbl());
             auto node = getCachedOsgNode(transmission);
             if (node != nullptr) {
                 switch (signalShape) {
                     case SIGNAL_SHAPE_RING: {
-                        auto positionAttitudeTransform = static_cast<osg::PositionAttitudeTransform *>(node);
-                        auto annulusAutoTransform = static_cast<osg::AutoTransform *>(positionAttitudeTransform->getChild(0));
-                        auto annulus = static_cast<osg::Geometry *>(static_cast<osg::Geode *>(annulusAutoTransform->getChild(0))->getDrawable(0));
-                        auto labelAutoTransform = static_cast<osg::AutoTransform *>(positionAttitudeTransform->getChild(1));
-                        auto vertices = inet::osg::createAnnulusVertices(Coord::ZERO, startRadius, endRadius, 100);
-                        annulus->setVertexArray(vertices);
-                        node->setNodeMask(startRadius > 0 ? -1 : 0);
-                        double phi = transmission->getId();
-                        labelAutoTransform->setPosition(osg::Vec3d(endRadius * sin(phi), endRadius * cos(phi), 0.0));
+                        refreshRingTransmissionNode(transmission, node);
                         break;
                     }
                     case SIGNAL_SHAPE_SPHERE: {
-                        auto sphere = static_cast<osg::Geode *>(node)->getDrawable(0);
-                        auto shape = static_cast<osg::Sphere *>(sphere->getShape());
-                        shape->setRadius(startRadius);
-                        sphere->dirtyDisplayList();
-                        sphere->dirtyBound();
-                        double alpha = std::min(1.0, pow(2.0, -startRadius / opacityHalfLife));
-                        auto material = static_cast<osg::Material *>(sphere->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL));
-                        material->setAlpha(osg::Material::FRONT_AND_BACK, std::max(0.1, alpha));
+                        refreshSphereTransmissionNode(transmission, node);
+                        break;
+                    }
+                    case SIGNAL_SHAPE_BOTH: {
+                        auto group = static_cast<osg::Group *>(node);
+                        refreshRingTransmissionNode(transmission, group->getChild(0));
+                        refreshSphereTransmissionNode(transmission, group->getChild(1));
                         break;
                     }
                     default:
@@ -429,6 +443,48 @@ void MediumOsgVisualizer::refreshDisplay() const
             }
         }
     }
+}
+
+void MediumOsgVisualizer::refreshRingTransmissionNode(const ITransmission *transmission, osg::Node *node) const
+{
+    auto propagation = radioMedium->getPropagation();
+    auto transmissionStart = transmission->getStartPosition();
+    double startRadius = propagation->getPropagationSpeed().get() * (simTime() - transmission->getStartTime()).dbl();
+    double endRadius = std::max(0.0, propagation->getPropagationSpeed().get() * (simTime() - transmission->getEndTime()).dbl());
+    auto positionAttitudeTransform = static_cast<osg::PositionAttitudeTransform *>(node);
+    auto annulusAutoTransform = static_cast<osg::AutoTransform *>(positionAttitudeTransform->getChild(0));
+    auto annulus = static_cast<osg::Geometry *>(static_cast<osg::Geode *>(annulusAutoTransform->getChild(0))->getDrawable(0));
+    auto labelAutoTransform = static_cast<osg::AutoTransform *>(positionAttitudeTransform->getChild(1));
+    auto vertices = inet::osg::createAnnulusVertices(Coord::ZERO, startRadius, endRadius, 100);
+    annulus->setVertexArray(vertices);
+    node->setNodeMask(startRadius > 0 ? 1 : 0);
+    double phi = transmission->getId();
+    labelAutoTransform->setPosition(osg::Vec3d(endRadius * sin(phi), endRadius * cos(phi), 0.0));
+}
+
+void MediumOsgVisualizer::refreshSphereTransmissionNode(const ITransmission *transmission, osg::Node *node) const
+{
+    auto propagation = radioMedium->getPropagation();
+    auto transmissionStart = transmission->getStartPosition();
+    double startRadius = propagation->getPropagationSpeed().get() * (simTime() - transmission->getStartTime()).dbl();
+    double endRadius = std::max(0.0, propagation->getPropagationSpeed().get() * (simTime() - transmission->getEndTime()).dbl());
+    auto geode = static_cast<osg::Geode *>(node);
+    auto startSphere = geode->getDrawable(0);
+    auto endSphere = geode->getDrawable(1);
+    auto startShape = static_cast<osg::Sphere *>(startSphere->getShape());
+    auto endShape = static_cast<osg::Sphere *>(endSphere->getShape());
+    startShape->setRadius(startRadius);
+    endShape->setRadius(endRadius);
+    startSphere->dirtyDisplayList();
+    startSphere->dirtyBound();
+    endSphere->dirtyDisplayList();
+    endSphere->dirtyBound();
+    double startAlpha = std::min(1.0, pow(2.0, -startRadius / opacityHalfLife));
+    auto startMaterial = static_cast<osg::Material *>(startSphere->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL));
+    startMaterial->setAlpha(osg::Material::FRONT_AND_BACK, std::max(0.1, startAlpha));
+    double endAlpha = std::min(1.0, pow(2.0, -endRadius / opacityHalfLife));
+    auto endMaterial = static_cast<osg::Material *>(endSphere->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL));
+    endMaterial->setAlpha(osg::Material::FRONT_AND_BACK, std::max(0.1, endAlpha));
 }
 
 void MediumOsgVisualizer::scheduleSignalPropagationUpdateTimer()

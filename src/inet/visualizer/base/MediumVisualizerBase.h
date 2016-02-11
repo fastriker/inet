@@ -33,7 +33,8 @@ class INET_API MediumVisualizerBase : public VisualizerBase, public RadioMedium:
     enum SignalShape
     {
         SIGNAL_SHAPE_RING,
-        SIGNAL_SHAPE_SPHERE
+        SIGNAL_SHAPE_SPHERE,
+        SIGNAL_SHAPE_BOTH,
     };
 
   protected:

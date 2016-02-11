@@ -85,11 +85,17 @@ std::string StatisticVisualizerBase::getText(CacheEntry *cacheEntry)
     if (std::isnan(value))
         sprintf(temp, "%s: -", prefix);
     else {
-        auto printUnit = unit;
         auto valueUnit = cacheEntry->unit;
-        if (*printUnit != '\0') {
-            double printValue = cNEDValue::convertUnit(value, valueUnit, printUnit);
-            sprintf(temp, "%s: %.2g %s", prefix, printValue, printUnit);
+        if (*unit != '\0') {
+            cStringTokenizer tokenizer(unit);
+            while (tokenizer.hasMoreTokens()) {
+                auto printUnit = tokenizer.nextToken();
+                double printValue = cNEDValue::convertUnit(value, valueUnit, printUnit);
+                if (printValue > 1 || !tokenizer.hasMoreTokens()) {
+                    sprintf(temp, "%s: %.2g %s", prefix, printValue, printUnit);
+                    break;
+                }
+            }
         }
         else
             sprintf(temp, "%s: %.2g %s", prefix, value, valueUnit == nullptr ? "" : valueUnit);
