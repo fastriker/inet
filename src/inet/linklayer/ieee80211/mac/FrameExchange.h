@@ -59,17 +59,23 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
         IStatistics *statistics;
         IFrameExchangeCallback *upperMac = nullptr;
 
+        // *****
+        bool succeeded = false;
+        bool finished = false;
+
     protected:
         virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs);
-        virtual void reportSuccess();
-        virtual void reportFailure();
-
-        virtual FrameProcessingResult lowerFrameReceived(Ieee80211Frame *frame) override;
+        virtual FrameExchangeState lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void corruptedOrNotForUsFrameReceived() override;
 
     public:
         FrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback);
         virtual AccessCategory getAc() = 0;
+
+        //////////////////
+        virtual bool isSucceeded() { return succeeded; }
+        virtual bool isFinished() { return finished; }
+
         virtual ~FrameExchange();
 };
 
@@ -89,8 +95,8 @@ class INET_API StepBasedFrameExchange : public FrameExchange
     protected:
         // to be redefined by user
         virtual void doStep(int step) = 0;
-        virtual FrameProcessingResult processReply(int step, Ieee80211Frame *frame) = 0; // true = frame accepted as reply and processing will continue on next step
-        virtual void processTimeout(int step) = 0;
+        virtual IFrameExchange::FrameExchangeState processReply(int step, Ieee80211Frame *frame) = 0; // true = frame accepted as reply and processing will continue on next step
+        virtual IFrameExchange::FrameExchangeState processTimeout(int step) = 0;
 
         // operations that can be called from doStep()
         virtual void transmitFrame(Ieee80211Frame *frame);
@@ -107,7 +113,7 @@ class INET_API StepBasedFrameExchange : public FrameExchange
         virtual void setOperation(Operation type);
         virtual void logStatus(const char *what);
         virtual void checkOperation(Operation stepType, const char *where);
-        virtual void handleTimeout();
+        virtual FrameExchangeState handleTimeout();
         static const char *statusName(Status status);
         static const char *operationName(Operation operation);
         static const char *operationFunctionName(Operation operation);
@@ -119,10 +125,11 @@ class INET_API StepBasedFrameExchange : public FrameExchange
         virtual void startFrameExchange() override;
         virtual void continueFrameExchange() override;
         virtual void abortFrameExchange() override;
-        virtual FrameProcessingResult lowerFrameReceived(Ieee80211Frame *frame) override;
+        virtual FrameExchangeState lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void transmissionComplete() override;
         virtual void handleSelfMessage(cMessage *timer) override;
+        virtual FrameExchangeState newHandleSelfMessage(cMessage *msg) override;
         virtual AccessCategory getAc() override { return defaultAccessCategory; }
 };
 

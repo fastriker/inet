@@ -47,26 +47,14 @@ void FrameExchange::transmitFrame(Ieee80211Frame *frame, simtime_t ifs)
     tx->transmitFrame(frame, ifs, this);
 }
 
-IFrameExchange::FrameProcessingResult FrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
+IFrameExchange::FrameExchangeState FrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
 {
-    return IGNORED;  // not ours
+    return FrameExchangeState::DONT_CARE; // not ours
 }
 
 void FrameExchange::corruptedOrNotForUsFrameReceived()
 {
     // we don't care
-}
-
-void FrameExchange::reportSuccess()
-{
-    EV_DETAIL << "Frame exchange successful\n";
-    upperMac->frameExchangeFinished(this, true);    // may delete *this* FrameExchange object!
-}
-
-void FrameExchange::reportFailure()
-{
-    EV_DETAIL << "Frame exchange failed\n";
-    upperMac->frameExchangeFinished(this, false);    // may delete *this* FrameExchange object!
 }
 
 StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, int txIndex, AccessCategory accessCategory) :
@@ -172,33 +160,33 @@ void StepBasedFrameExchange::transmissionComplete()
     proceed();
 }
 
-IFrameExchange::FrameProcessingResult StepBasedFrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
+IFrameExchange::FrameExchangeState StepBasedFrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
 {
     EV_DETAIL << "Lower frame received in step " << step << "\n";
     ASSERT(status == INPROGRESS);
 
     if (operation == EXPECT_FULL_REPLY) {
         operation = NONE;
-        FrameProcessingResult result = processReply(step, frame);
+        FrameExchangeState frameExchangeState = processReply(step, frame);
         if (status == INPROGRESS) {
-            logStatus(result == IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
+            logStatus(frameExchangeState.result == IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
             checkOperation(operation, "processReply()");
-            if (result == PROCESSED_KEEP || result == PROCESSED_DISCARD || operation != NONE) {
+            if (frameExchangeState.result == ACCEPTED || operation != NONE) {
                 cancelEvent(timeoutMsg);
                 proceed();
             }
             else
                 operation = EXPECT_FULL_REPLY; // restore
         }
-        return result;
+        return frameExchangeState;
     }
     else if (operation == EXPECT_REPLY_RXSTART) {
         operation = NONE;
-        FrameProcessingResult result = processReply(step, frame);
+        FrameExchangeState frameExchangeState = processReply(step, frame);
         if (status == INPROGRESS) {
-            logStatus(result == IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
+            logStatus(frameExchangeState.result == IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
             checkOperation(operation, "processReply()");
-            if (result == PROCESSED_KEEP || result == PROCESSED_DISCARD || operation != NONE) {
+            if (frameExchangeState.result == ACCEPTED || operation != NONE) {
                 cancelEvent(timeoutMsg);
                 proceed();
             }
@@ -206,13 +194,13 @@ IFrameExchange::FrameProcessingResult StepBasedFrameExchange::lowerFrameReceived
                 if (timeoutMsg->isScheduled())
                     operation = EXPECT_REPLY_RXSTART; // restore operation and continue waiting
                 else
-                    handleTimeout();  // frame being received when timeout expired was not accepted as response: declare timeout
+                    return handleTimeout();  // frame being received when timeout expired was not accepted as response: declare timeout
             }
         }
-        return result;
+        return frameExchangeState;
     }
     else {
-        return IGNORED; // momentarily not interested in received frames
+        return FrameExchangeState::DONT_CARE; // momentarily not interested in received frames
     }
 }
 
@@ -242,6 +230,28 @@ void StepBasedFrameExchange::handleSelfMessage(cMessage *msg)
     }
 }
 
+IFrameExchange::FrameExchangeState StepBasedFrameExchange::newHandleSelfMessage(cMessage* msg)
+{
+    EV_DETAIL << "Timeout in step " << step << "\n";
+    ASSERT(status == INPROGRESS);
+    ASSERT(msg == timeoutMsg);
+    if (operation == EXPECT_FULL_REPLY) {
+        return handleTimeout();
+    }
+    else if (operation == EXPECT_REPLY_RXSTART) {
+        // If there's no sign of the reply (e.g ACK) being received, declare timeout.
+        // Otherwise we'll wait for the frame to be fully received and be reported
+        // to us via lowerFrameReceived() or corruptedFrameReceived(), and decide then.
+        if (!rx->isReceptionInProgress())
+            return handleTimeout();
+        return FrameExchangeState::DONT_CARE;
+    }
+    else {
+        ASSERT(false);
+    }
+}
+
+
 void StepBasedFrameExchange::checkOperation(Operation operation, const char *where)
 {
     switch (operation) {
@@ -251,14 +261,15 @@ void StepBasedFrameExchange::checkOperation(Operation operation, const char *whe
     }
 }
 
-void StepBasedFrameExchange::handleTimeout()
+IFrameExchange::FrameExchangeState StepBasedFrameExchange::handleTimeout()
 {
     operation = NONE;
-    processTimeout(step);
+    FrameExchangeState state = processTimeout(step);
     if (status == INPROGRESS) {
         logStatus("processTimeout()");
         checkOperation(operation, "processTimeout()");
     }
+    return state;
 }
 
 void StepBasedFrameExchange::continueFrameExchange()
@@ -311,16 +322,20 @@ void StepBasedFrameExchange::gotoStep(int step)
 
 void StepBasedFrameExchange::giveUp()
 {
+    EV_DETAIL << "Frame exchange failed\n";
     setOperation(FAIL);
     status = FAILED;
-    reportFailure();
+    finished = true;
+    succeeded = false;
 }
 
 void StepBasedFrameExchange::succeed()
 {
+    EV_DETAIL << "Frame exchange successful\n";
     setOperation(SUCCEED);
     status = SUCCEEDED;
-    reportSuccess();
+    finished = true;
+    succeeded = true;
 }
 
 void StepBasedFrameExchange::setOperation(Operation newOperation)

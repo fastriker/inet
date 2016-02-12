@@ -331,12 +331,12 @@ bool EdcaUpperMac::processOrDeleteLowerFrame(Ieee80211Frame *frame)
     bool shouldDelete = false;
     for (int i = 0; i < numACs; i++) {
         if (acData[i].frameExchange) {
-            IFrameExchange::FrameProcessingResult result = acData[i].frameExchange->lowerFrameReceived(frame);
-            bool justProcessed = (result != IFrameExchange::IGNORED);
+            IFrameExchange::FrameExchangeState result = acData[i].frameExchange->lowerFrameReceived(frame);
+            bool justProcessed = (result.result != IFrameExchange::IGNORED);
             ASSERT(!alreadyProcessed || !justProcessed); // ensure it's not double-processed
             if (justProcessed) {
                 alreadyProcessed = true;
-                shouldDelete = (result == IFrameExchange::PROCESSED_DISCARD);
+                shouldDelete = (result.result == IFrameExchange::ACCEPTED);
             }
         }
     }

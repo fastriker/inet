@@ -69,36 +69,34 @@ void SendDataWithAckFrameExchange::doStep(int step)
     }
 }
 
-IFrameExchange::FrameProcessingResult SendDataWithAckFrameExchange::processReply(int step, Ieee80211Frame *frame)
+IFrameExchange::FrameExchangeState SendDataWithAckFrameExchange::processReply(int step, Ieee80211Frame *frame)
 {
     switch (step) {
         case 1:
             if (utils->isAck(frame)) {
-                upperMac->frameTransmissionSucceeded(this, dataFrame, defaultAccessCategory);
-                return PROCESSED_DISCARD;
+                return FrameExchangeState(FrameProcessingResult::ACCEPTED, AC_LEGACY, dataFrame, dataFrame, true);
             }
             else
-                return IGNORED;
-        default: ASSERT(false); return IGNORED;
+                return FrameExchangeState(FrameProcessingResult::IGNORED, AC_LEGACY, dataFrame, dataFrame, false);
+        default: ASSERT(false);
+        return FrameExchangeState::DONT_CARE;
     }
 }
 
-void SendDataWithAckFrameExchange::processTimeout(int step)
+IFrameExchange::FrameExchangeState SendDataWithAckFrameExchange::processTimeout(int step)
 {
     switch (step) {
-        case 1:
-            transmissionFailed();
-            break;
+        case 1: return transmissionFailed();
         default: ASSERT(false);
     }
 }
 
 
-void SendDataWithAckFrameExchange::transmissionFailed()
+IFrameExchange::FrameExchangeState SendDataWithAckFrameExchange::transmissionFailed()
 {
     dataFrame->setRetry(true);
     gotoStep(0);
-    upperMac->frameTransmissionFailed(this, dataFrame, dataFrame, defaultAccessCategory);
+    return FrameExchangeState(FrameProcessingResult::TIMEOUT, AC_LEGACY, dataFrame, dataFrame, false);
 }
 
 
@@ -114,6 +112,7 @@ SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeCo
 SendDataWithRtsCtsFrameExchange::~SendDataWithRtsCtsFrameExchange()
 {
     delete dataFrame;
+    delete rtsFrame;
 }
 
 std::string SendDataWithRtsCtsFrameExchange::info() const
@@ -138,42 +137,42 @@ void SendDataWithRtsCtsFrameExchange::doStep(int step)
     }
 }
 
-IFrameExchange::FrameProcessingResult SendDataWithRtsCtsFrameExchange::processReply(int step, Ieee80211Frame *frame)
+IFrameExchange::FrameExchangeState SendDataWithRtsCtsFrameExchange::processReply(int step, Ieee80211Frame *frame)
 {
     switch (step) {
         case 1:
             if (utils->isCts(frame)) {
-                upperMac->frameTransmissionSucceeded(this, rtsFrame, defaultAccessCategory);
-                return PROCESSED_DISCARD;
+                return FrameExchangeState(FrameProcessingResult::ACCEPTED, AC_LEGACY, dataFrame, rtsFrame, true);
             }
             else
-                return IGNORED;
+                return FrameExchangeState(FrameProcessingResult::IGNORED, AC_LEGACY, dataFrame, rtsFrame, false);
         case 3:
             if (utils->isAck(frame)) {
-                upperMac->frameTransmissionSucceeded(this, dataFrame, defaultAccessCategory);
-                return PROCESSED_DISCARD;
+                return FrameExchangeState(FrameProcessingResult::ACCEPTED, AC_LEGACY, dataFrame, dataFrame, true);
             }
             else
-                return IGNORED;
-        default: ASSERT(false); return IGNORED;
+                return FrameExchangeState(FrameProcessingResult::IGNORED, AC_LEGACY, dataFrame, dataFrame, false);
+        default: ASSERT(false);
+        return FrameExchangeState::DONT_CARE;
     }
 }
 
-void SendDataWithRtsCtsFrameExchange::processTimeout(int step)
+IFrameExchange::FrameExchangeState SendDataWithRtsCtsFrameExchange::processTimeout(int step)
 {
     switch (step) {
-        case 1: transmissionFailed(dataFrame, rtsFrame); break;
-        case 3: transmissionFailed(dataFrame, dataFrame); break;
+        return transmissionFailed(dataFrame, rtsFrame);
+        return transmissionFailed(dataFrame, dataFrame);
         default: ASSERT(false);
     }
+    return FrameExchangeState::DONT_CARE;
 }
 
-void SendDataWithRtsCtsFrameExchange::transmissionFailed(Ieee80211Frame* dataFrame, Ieee80211Frame* failedFrame)
+IFrameExchange::FrameExchangeState SendDataWithRtsCtsFrameExchange::transmissionFailed(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame, Ieee80211Frame* failedFrame)
 {
     if (failedFrame->getType() == ST_DATA)
         failedFrame->setRetry(true);
     gotoStep(0);
-    upperMac->frameTransmissionFailed(this, dataFrame, failedFrame, defaultAccessCategory);
+    return FrameExchangeState(FrameProcessingResult::TIMEOUT, AC_LEGACY, dataOrMgmtFrame, failedFrame, false);
 }
 
 //------------------------------
@@ -208,17 +207,17 @@ void SendMulticastDataFrameExchange::startFrameExchange()
 
 void SendMulticastDataFrameExchange::continueFrameExchange()
 {
-    throw cRuntimeError("jaj");
+    throw cRuntimeError("It is not allowed to continue a multicast frame exchange");
 }
 
 void SendMulticastDataFrameExchange::abortFrameExchange()
 {
-    reportFailure();
+    //reportFailure();
 }
 
 void SendMulticastDataFrameExchange::transmissionComplete()
 {
-    reportSuccess();
+    //reportSuccess();
 }
 
 } // namespace ieee80211

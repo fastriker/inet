@@ -44,7 +44,23 @@ class INET_API IFrameExchange
                 virtual ~IFrameExchangeCallback() {}
         };
 
-        enum FrameProcessingResult { IGNORED, PROCESSED_DISCARD, PROCESSED_KEEP };
+        enum FrameProcessingResult { ACCEPTED, IGNORED, TIMEOUT }; // TODO: step result
+
+        class INET_API FrameExchangeState
+        {
+            public:
+                static FrameExchangeState DONT_CARE;
+
+                FrameProcessingResult result = IGNORED;
+                AccessCategory ac = AC_LEGACY;
+                Ieee80211DataOrMgmtFrame *dataOrMgmtFrame = nullptr;
+                Ieee80211Frame *transmittedFrame = nullptr;
+                bool successfullyTransmitted = false;
+
+                FrameExchangeState(FrameProcessingResult result, AccessCategory ac, Ieee80211DataOrMgmtFrame *dataOrMgmtFrame, Ieee80211Frame *transmittedFrame, bool successfullyTransmitted) :
+                    result(result), ac(ac), dataOrMgmtFrame(dataOrMgmtFrame), transmittedFrame(transmittedFrame), successfullyTransmitted(successfullyTransmitted) {}
+        };
+
 
     public:
         virtual ~IFrameExchange() {}
@@ -53,9 +69,14 @@ class INET_API IFrameExchange
         virtual void abortFrameExchange() = 0;
         virtual Ieee80211DataOrMgmtFrame *getDataFrame() = 0;
         virtual Ieee80211Frame *getFirstFrame() = 0;
-        virtual FrameProcessingResult lowerFrameReceived(Ieee80211Frame *frame) = 0;
+        virtual FrameExchangeState lowerFrameReceived(Ieee80211Frame *frame) = 0;
         virtual void corruptedOrNotForUsFrameReceived() = 0;
         virtual AccessCategory getAc() = 0;
+
+        /////
+        virtual FrameExchangeState newHandleSelfMessage(cMessage *msg) = 0;
+        virtual bool isSucceeded() = 0;
+        virtual bool isFinished() = 0;
 };
 
 } // namespace ieee80211

@@ -33,10 +33,11 @@ class INET_API SendDataWithAckFrameExchange : public StepBasedFrameExchange
         Ieee80211DataOrMgmtFrame *dataFrame = nullptr;
         int retryCount = 0;
     protected:
-        virtual void transmissionFailed();
         virtual void doStep(int step) override;
-        virtual FrameProcessingResult processReply(int step, Ieee80211Frame *frame) override;
-        virtual void processTimeout(int step) override;
+
+        virtual FrameExchangeState transmissionFailed();
+        virtual FrameExchangeState processReply(int step, Ieee80211Frame *frame) override;
+        virtual FrameExchangeState processTimeout(int step) override;
     public:
         SendDataWithAckFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendDataWithAckFrameExchange();
@@ -53,9 +54,9 @@ class INET_API SendDataWithRtsCtsFrameExchange : public StepBasedFrameExchange
 
     protected:
         virtual void doStep(int step) override;
-        virtual FrameProcessingResult processReply(int step, Ieee80211Frame *frame) override;
-        virtual void processTimeout(int step) override;
-        virtual void transmissionFailed(Ieee80211Frame *dataFrame, Ieee80211Frame *failedFrame);
+        virtual FrameExchangeState processReply(int step, Ieee80211Frame *frame) override;
+        virtual FrameExchangeState processTimeout(int step) override;
+        virtual FrameExchangeState transmissionFailed(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame, Ieee80211Frame *failedFrame);
 
     public:
         SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
@@ -84,6 +85,7 @@ class INET_API SendMulticastDataFrameExchange : public FrameExchange
         virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
         virtual Ieee80211Frame *getFirstFrame() override { return dataFrame; }
         virtual AccessCategory getAc() override { return accessCategory; }
+        virtual FrameExchangeState newHandleSelfMessage(cMessage *msg) override {};
 };
 
 } // namespace ieee80211

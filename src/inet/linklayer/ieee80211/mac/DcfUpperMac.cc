@@ -122,7 +122,11 @@ IMacParameters *DcfUpperMac::extractParameters(const IIeee80211Mode *slowestMand
 void DcfUpperMac::handleMessage(cMessage *msg)
 {
     if (msg->getContextPointer() != nullptr)
+    {
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
+        // TODO: CODE
+        // doSomething();
+    }
     else
         ASSERT(false);
     cleanupFrameExchanges();
@@ -253,12 +257,16 @@ void DcfUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
 void DcfUpperMac::corruptedOrNotForUsFrameReceived()
 {
     if (frameExchange)
+    {
         frameExchange->corruptedOrNotForUsFrameReceived();
+        // doSomething();
+    }
 }
 
 void DcfUpperMac::channelAccessGranted(int txIndex)
 {
-    EV_INFO << "Channel access granted :)))))))))\n";
+    cleanupFrameExchanges();
+    EV_INFO << "Channel access granted\n";
     Enter_Method("channelAccessGranted()");
     if (frameExchange)
         frameExchange->continueFrameExchange();
@@ -303,11 +311,12 @@ void DcfUpperMac::cleanupFrameExchanges()
 bool DcfUpperMac::processOrDeleteLowerFrame(Ieee80211Frame* frame)
 {
     // offer frame to ongoing frame exchange
-    IFrameExchange::FrameProcessingResult result = frameExchange ? frameExchange->lowerFrameReceived(frame) : IFrameExchange::IGNORED;
+    IFrameExchange::FrameProcessingResult result = frameExchange ? frameExchange->lowerFrameReceived(frame).result : IFrameExchange::IGNORED;
+    // TODO: doSomething();
     bool processed = (result != IFrameExchange::IGNORED);
     if (processed) {
         // already processed, nothing more to do
-        if (result == IFrameExchange::PROCESSED_DISCARD)
+        if (result == IFrameExchange::ACCEPTED)
             delete frame;
         return false;
     }
