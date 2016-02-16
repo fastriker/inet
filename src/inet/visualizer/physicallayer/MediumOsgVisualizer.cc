@@ -236,11 +236,8 @@ osg::Node *MediumOsgVisualizer::createRingTransmissionNode(const ITransmission *
 osg::Node *MediumOsgVisualizer::createSphereTransmissionNode(const ITransmission *transmission) const
 {
     auto transmissionStart = transmission->getStartPosition();
-    auto startSphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 1));
-    auto endSphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 1));
-    auto geode = new osg::Geode();
-    geode->addDrawable(startSphere);
-    geode->addDrawable(endSphere);
+    auto startSphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 0));
+    auto endSphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(transmissionStart.x, transmissionStart.y, transmissionStart.z), 0));
     cFigure::Color color = cFigure::GOOD_DARK_COLORS[transmission->getId() % (sizeof(cFigure::GOOD_DARK_COLORS) / sizeof(cFigure::Color))];
     auto depth = new osg::Depth();
     depth->setWriteMask(false);
@@ -250,7 +247,16 @@ osg::Node *MediumOsgVisualizer::createSphereTransmissionNode(const ITransmission
     auto endStateSet = inet::osg::createStateSet(color, 1.0, false);
     endStateSet->setAttributeAndModes(depth, osg::StateAttribute::ON);
     endSphere->setStateSet(endStateSet);
-    return geode;
+    auto startGeode = new osg::Geode();
+    startGeode->addDrawable(startSphere);
+    startGeode->setNodeMask(0);
+    auto endGeode = new osg::Geode();
+    endGeode->addDrawable(endSphere);
+    endGeode->setNodeMask(0);
+    auto group = new osg::Group();
+    group->addChild(startGeode);
+    group->addChild(endGeode);
+    return group;
 }
 
 void MediumOsgVisualizer::radioAdded(const IRadio *radio)
@@ -468,9 +474,13 @@ void MediumOsgVisualizer::refreshSphereTransmissionNode(const ITransmission *tra
     auto transmissionStart = transmission->getStartPosition();
     double startRadius = propagation->getPropagationSpeed().get() * (simTime() - transmission->getStartTime()).dbl();
     double endRadius = std::max(0.0, propagation->getPropagationSpeed().get() * (simTime() - transmission->getEndTime()).dbl());
-    auto geode = static_cast<osg::Geode *>(node);
-    auto startSphere = geode->getDrawable(0);
-    auto endSphere = geode->getDrawable(1);
+    auto group = static_cast<osg::Group *>(node);
+    auto startGeode = static_cast<osg::Geode *>(group->getChild(0));
+    startGeode->setNodeMask(startRadius != 0);
+    auto endGeode = static_cast<osg::Geode *>(group->getChild(1));
+    endGeode->setNodeMask(endRadius != 0);
+    auto startSphere = startGeode->getDrawable(0);
+    auto endSphere = endGeode->getDrawable(0);
     auto startShape = static_cast<osg::Sphere *>(startSphere->getShape());
     auto endShape = static_cast<osg::Sphere *>(endSphere->getShape());
     startShape->setRadius(startRadius);

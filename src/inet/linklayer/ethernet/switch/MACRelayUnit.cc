@@ -13,13 +13,13 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-#include "inet/linklayer/ethernet/switch/MACRelayUnit.h"
+#include "inet/common/LayeredProtocolBase.h"
+#include "inet/common/lifecycle/NodeOperations.h"
+#include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/ethernet/EtherFrame.h"
 #include "inet/linklayer/ethernet/EtherMACBase.h"
 #include "inet/linklayer/ethernet/Ethernet.h"
-#include "inet/common/ModuleAccess.h"
-#include "inet/common/lifecycle/NodeOperations.h"
-#include "inet/common/LayeredProtocolBase.h"
+#include "inet/linklayer/ethernet/switch/MACRelayUnit.h"
 
 namespace inet {
 
@@ -55,7 +55,7 @@ void MACRelayUnit::handleMessage(cMessage *msg)
     }
     EtherFrame *frame = check_and_cast<EtherFrame *>(msg);
     // Frame received from MAC unit
-    emit(LayeredProtocolBase::packetReceivedFromLowerSignal, datagram);
+    emit(LayeredProtocolBase::packetReceivedFromLowerSignal, frame);
     handleAndDispatchFrame(frame);
 }
 

@@ -15,11 +15,12 @@
 //
 // Author: Benjamin Martin Seregi
 
-#include "inet/linklayer/ieee8021d/relay/Ieee8021dRelay.h"
-#include "inet/linklayer/common/Ieee802Ctrl.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
-#include "inet/linklayer/configurator/Ieee8021dInterfaceData.h"
+#include "inet/common/LayeredProtocolBase.h"
 #include "inet/common/ModuleAccess.h"
+#include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/configurator/Ieee8021dInterfaceData.h"
+#include "inet/linklayer/ieee8021d/relay/Ieee8021dRelay.h"
+#include "inet/networklayer/common/InterfaceEntry.h"
 
 namespace inet {
 
@@ -89,6 +90,7 @@ void Ieee8021dRelay::handleMessage(cMessage *msg)
             numReceivedNetworkFrames++;
             EV_INFO << "Received " << msg << " from network." << endl;
             EtherFrame *frame = check_and_cast<EtherFrame *>(msg);
+            emit(LayeredProtocolBase::packetReceivedFromLowerSignal, frame);
             handleAndDispatchFrame(frame);
         }
     }

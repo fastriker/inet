@@ -17,6 +17,8 @@
 
 #include "inet/common/LayeredProtocolBase.h"
 #include "inet/common/ModuleAccess.h"
+#include "inet/linklayer/ethernet/switch/MACRelayUnit.h"
+#include "inet/linklayer/ieee8021d/relay/Ieee8021dRelay.h"
 #include "inet/mobility/contract/IMobility.h"
 #include "inet/networklayer/ipv4/IPv4.h"
 #include "inet/visualizer/base/RouteVisualizerBase.h"
@@ -176,10 +178,20 @@ void RouteVisualizerBase::receiveSignal(cComponent *source, simsignal_t signal, 
         }
     }
     else if (signal == LayeredProtocolBase::packetReceivedFromLowerSignal) {
-        if (dynamic_cast<IPv4 *>(source) != nullptr) {
+        if (dynamic_cast<IPv4 *>(source) != nullptr)
+        {
             auto packet = check_and_cast<cPacket *>(object);
             if (packetNameMatcher.matches(packet->getFullName())) {
                 auto treeId = packet->getEncapsulatedPacket()->getTreeId();
+                auto module = check_and_cast<cModule *>(source);
+                addToIncompleteRoute(treeId, getContainingNode(module));
+            }
+        }
+        else if (dynamic_cast<MACRelayUnit *>(source) != nullptr || dynamic_cast<Ieee8021dRelay *>(source) != nullptr)
+        {
+            auto packet = check_and_cast<cPacket *>(object);
+            if (packetNameMatcher.matches(packet->getFullName())) {
+                auto treeId = packet->getEncapsulatedPacket()->getEncapsulatedPacket()->getTreeId();
                 auto module = check_and_cast<cModule *>(source);
                 addToIncompleteRoute(treeId, getContainingNode(module));
             }
