@@ -689,10 +689,9 @@ void LMacLayer::attachSignal(LMacFrame *macPkt)
  */
 cObject *LMacLayer::setUpControlInfo(cMessage *const pMsg, const MACAddress& pSrcAddr)
 {
-    SimpleLinkLayerControlInfo *const cCtrlInfo = new SimpleLinkLayerControlInfo();
+    SimpleLinkLayerControlInfo *cCtrlInfo = pMsg->ensureTag<SimpleLinkLayerControlInfo>();
     cCtrlInfo->setSrc(pSrcAddr);
     cCtrlInfo->setInterfaceId(interfaceEntry->getInterfaceId());
-    pMsg->setControlInfo(cCtrlInfo);
     return cCtrlInfo;
 }
 

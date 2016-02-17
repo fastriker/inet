@@ -45,7 +45,9 @@ void ExampleQoSClassifier::initialize()
 
 void ExampleQoSClassifier::handleMessage(cMessage *msg)
 {
-    Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl*>(msg->getControlInfo());
+    Ieee802Ctrl *ctrl = msg->getTag<Ieee802Ctrl>();
+    if(ctrl == nullptr)
+        throw cRuntimeError("Ieee802Ctrl tag is missing at %s(%s) message", msg->getName(), msg->getClassName());
     int userPriority = getUserPriority(msg);
     ctrl->setUserPriority(userPriority);
     send(msg, "out");

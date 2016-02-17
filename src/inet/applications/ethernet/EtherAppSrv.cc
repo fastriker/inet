@@ -89,7 +89,6 @@ void EtherAppSrv::handleMessage(cMessage *msg)
     int srcSap = ctrl->getSsap();
     long requestId = req->getRequestId();
     long replyBytes = req->getResponseBytes();
-    delete ctrl;
 
     // send back packets asked by EtherAppCli side
     for (int k = 0; replyBytes > 0; k++) {

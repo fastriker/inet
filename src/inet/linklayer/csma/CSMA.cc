@@ -942,9 +942,8 @@ cPacket *CSMA::decapsMsg(CSMAFrame *macPkt)
  */
 cObject *CSMA::setUpControlInfo(cMessage *const pMsg, const MACAddress& pSrcAddr)
 {
-    SimpleLinkLayerControlInfo *const cCtrlInfo = new SimpleLinkLayerControlInfo();
+    SimpleLinkLayerControlInfo *cCtrlInfo = pMsg->ensureTag<SimpleLinkLayerControlInfo>();
     cCtrlInfo->setSrc(pSrcAddr);
-    pMsg->setControlInfo(cCtrlInfo);
     return cCtrlInfo;
 }
 
