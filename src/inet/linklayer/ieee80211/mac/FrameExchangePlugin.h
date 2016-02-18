@@ -14,34 +14,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
-// Author: Andras Varga
-//
 
-#ifndef __INET_ITX_H
-#define __INET_ITX_H
+#ifndef __INET_FRAMEEXCHANGEPLUGIN_H
+#define __INET_FRAMEEXCHANGEPLUGIN_H
 
-#include "inet/common/INETDefs.h"
+#include "MacPlugin.h"
+#include "FrameExchange.h"
 
 namespace inet {
 namespace ieee80211 {
 
-class Ieee80211Frame;
-
-/**
- * Abstract interface for unconditionally transmitting a frame immediately
- * or after waiting for a specified inter-frame space (usually SIFS).
- */
-class INET_API ITx
-{
+class FrameExchangePlugin : public MacPlugin {
     public:
-        virtual ~ITx() {}
-        virtual void transmitFrame(Ieee80211Frame *frame) = 0;
-        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) = 0;
-        virtual void radioTransmissionFinished() = 0;
+        FrameExchangePlugin(cSimpleModule *ownerModule) : MacPlugin(ownerModule) {}
+        virtual FrameExchangeState handleSelfMessage(cMessage *msg) = 0;
 };
 
-} // namespace ieee80211
-} // namespace inet
+} /* namespace ieee80211 */
+} /* namespace inet */
 
-#endif
-
+#endif // __INET_FRAMEEXCHANGEPLUGIN_H

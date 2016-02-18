@@ -30,8 +30,8 @@ class Ieee80211DataOrMgmtFrame;
 class INET_API SendDataWithAckFrameExchange : public StepBasedFrameExchange
 {
     protected:
-        Ieee80211DataOrMgmtFrame *dataFrame = nullptr;
-        int retryCount = 0;
+        Ieee80211DataOrMgmtFrame *dataOrMgmtFrame = nullptr;
+
     protected:
         virtual void doStep(int step) override;
 
@@ -39,17 +39,16 @@ class INET_API SendDataWithAckFrameExchange : public StepBasedFrameExchange
         virtual FrameExchangeState processReply(int step, Ieee80211Frame *frame) override;
         virtual FrameExchangeState processTimeout(int step) override;
     public:
-        SendDataWithAckFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendDataWithAckFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendDataWithAckFrameExchange();
-        virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
-        virtual Ieee80211Frame *getFirstFrame() override { return dataFrame; }
         virtual std::string info() const override;
+        virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() { return dataOrMgmtFrame; }
 };
 
 class INET_API SendDataWithRtsCtsFrameExchange : public StepBasedFrameExchange
 {
     protected:
-        Ieee80211DataOrMgmtFrame *dataFrame = nullptr;
+        Ieee80211DataOrMgmtFrame *dataOrMgmtFrame = nullptr;
         Ieee80211RTSFrame *rtsFrame = nullptr;
 
     protected:
@@ -59,33 +58,31 @@ class INET_API SendDataWithRtsCtsFrameExchange : public StepBasedFrameExchange
         virtual FrameExchangeState transmissionFailed(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame, Ieee80211Frame *failedFrame);
 
     public:
-        SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendDataWithRtsCtsFrameExchange();
-        virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
-        virtual Ieee80211Frame *getFirstFrame() override { return rtsFrame; }
         virtual std::string info() const override;
+        virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() { return dataOrMgmtFrame; }
 };
 
 class INET_API SendMulticastDataFrameExchange : public FrameExchange
 {
     protected:
-        Ieee80211DataOrMgmtFrame *dataFrame;
+        Ieee80211DataOrMgmtFrame *dataOrMgmtFrame;
         int txIndex;
         AccessCategory accessCategory;
 
     public:
-        SendMulticastDataFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendMulticastDataFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
         ~SendMulticastDataFrameExchange();
         virtual void startFrameExchange() override;
         virtual void continueFrameExchange() override;
         virtual void abortFrameExchange() override;
-        virtual void transmissionComplete() override;
-        virtual void handleSelfMessage(cMessage* timer) override;
+        virtual FrameExchangeState handleSelfMessage(cMessage* timer) override;
         virtual std::string info() const override;
-        virtual Ieee80211DataOrMgmtFrame *getDataFrame() override { return dataFrame; }
-        virtual Ieee80211Frame *getFirstFrame() override { return dataFrame; }
         virtual AccessCategory getAc() override { return accessCategory; }
-        virtual FrameExchangeState newHandleSelfMessage(cMessage *msg) override {};
+        virtual bool isFinished() override { return true; }
+        virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() { return dataOrMgmtFrame; }
+        virtual Ieee80211Frame *getNextFrameWaitingForTransmission() { return dataOrMgmtFrame; }
 };
 
 } // namespace ieee80211

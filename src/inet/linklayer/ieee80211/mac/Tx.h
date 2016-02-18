@@ -44,7 +44,6 @@ class INET_API Tx : public cSimpleModule, public ITx
         cMessage *endIfsTimer = nullptr;
         simtime_t durationField;
         bool transmitting = false;
-        ITxCallback *txCallback = nullptr;
 
     protected:
         virtual void initialize() override;
@@ -55,8 +54,8 @@ class INET_API Tx : public cSimpleModule, public ITx
         Tx() {}
         ~Tx();
 
-        virtual void transmitFrame(Ieee80211Frame *frame, ITxCallback *txCallback) override;
-        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITxCallback *txCallback) override;
+        virtual void transmitFrame(Ieee80211Frame *frame) override;
+        virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs) override;
         virtual void radioTransmissionFinished() override;
 };
 

@@ -27,14 +27,15 @@
 namespace inet {
 namespace ieee80211 {
 
-FrameExchange::FrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback) :
-    MacPlugin(context->ownerModule),
+FrameExchangeState FrameExchangeState::DONT_CARE = FrameExchangeState(IGNORED, AC_LEGACY, nullptr, nullptr);
+
+FrameExchange::FrameExchange(FrameExchangeContext *context) :
+    FrameExchangePlugin(context->ownerModule),
     params(context->params),
     utils(context->utils),
     tx(context->tx),
     rx(context->rx),
-    statistics(context->statistics),
-    upperMac(callback)
+    statistics(context->statistics)
 {
 }
 
@@ -44,10 +45,11 @@ FrameExchange::~FrameExchange()
 
 void FrameExchange::transmitFrame(Ieee80211Frame *frame, simtime_t ifs)
 {
-    tx->transmitFrame(frame, ifs, this);
+    nextFrameWatingForTransmmission = frame;
+    tx->transmitFrame(frame, ifs);
 }
 
-IFrameExchange::FrameExchangeState FrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
+FrameExchangeState FrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
 {
     return FrameExchangeState::DONT_CARE; // not ours
 }
@@ -57,8 +59,8 @@ void FrameExchange::corruptedOrNotForUsFrameReceived()
     // we don't care
 }
 
-StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, IFrameExchangeCallback *callback, int txIndex, AccessCategory accessCategory) :
-    FrameExchange(context, callback), defaultTxIndex(txIndex), defaultAccessCategory(accessCategory)
+StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, int txIndex, AccessCategory accessCategory) :
+    FrameExchange(context), defaultTxIndex(txIndex), defaultAccessCategory(accessCategory)
 {
 }
 
@@ -152,15 +154,7 @@ void StepBasedFrameExchange::proceed()
         throw cRuntimeError("Frame exchange finished");
 }
 
-void StepBasedFrameExchange::transmissionComplete()
-{
-    ASSERT(status == INPROGRESS);
-    ASSERT(operation == TRANSMIT_FRAME);
-    EV_DETAIL << "Transmission complete\n";
-    proceed();
-}
-
-IFrameExchange::FrameExchangeState StepBasedFrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
+FrameExchangeState StepBasedFrameExchange::lowerFrameReceived(Ieee80211Frame *frame)
 {
     EV_DETAIL << "Lower frame received in step " << step << "\n";
     ASSERT(status == INPROGRESS);
@@ -169,11 +163,15 @@ IFrameExchange::FrameExchangeState StepBasedFrameExchange::lowerFrameReceived(Ie
         operation = NONE;
         FrameExchangeState frameExchangeState = processReply(step, frame);
         if (status == INPROGRESS) {
-            logStatus(frameExchangeState.result == IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
+            logStatus(frameExchangeState.result == FrameExchangeState::IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
             checkOperation(operation, "processReply()");
-            if (frameExchangeState.result == ACCEPTED || operation != NONE) {
+            if (frameExchangeState.result == FrameExchangeState::ACCEPTED || operation != NONE) {
                 cancelEvent(timeoutMsg);
                 proceed();
+                if (isFinished()) {
+                    frameExchangeState.result = FrameExchangeState::FINISHED;
+                    return frameExchangeState;
+                }
             }
             else
                 operation = EXPECT_FULL_REPLY; // restore
@@ -184,11 +182,15 @@ IFrameExchange::FrameExchangeState StepBasedFrameExchange::lowerFrameReceived(Ie
         operation = NONE;
         FrameExchangeState frameExchangeState = processReply(step, frame);
         if (status == INPROGRESS) {
-            logStatus(frameExchangeState.result == IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
+            logStatus(frameExchangeState.result == FrameExchangeState::IGNORED ? "processReply(): frame IGNORED": "processReply(): frame PROCESSED");
             checkOperation(operation, "processReply()");
-            if (frameExchangeState.result == ACCEPTED || operation != NONE) {
+            if (frameExchangeState.result == FrameExchangeState::ACCEPTED || operation != NONE) {
                 cancelEvent(timeoutMsg);
                 proceed();
+                if (isFinished()) {
+                    frameExchangeState.result = FrameExchangeState::FINISHED;
+                    return frameExchangeState;
+                }
             }
             else {
                 if (timeoutMsg->isScheduled())
@@ -210,27 +212,7 @@ void StepBasedFrameExchange::corruptedOrNotForUsFrameReceived()
         handleTimeout();  // the frame we were receiving when the timeout expired was received incorrectly
 }
 
-void StepBasedFrameExchange::handleSelfMessage(cMessage *msg)
-{
-    EV_DETAIL << "Timeout in step " << step << "\n";
-    ASSERT(status == INPROGRESS);
-    ASSERT(msg == timeoutMsg);
-    if (operation == EXPECT_FULL_REPLY) {
-        handleTimeout();
-    }
-    else if (operation == EXPECT_REPLY_RXSTART) {
-        // If there's no sign of the reply (e.g ACK) being received, declare timeout.
-        // Otherwise we'll wait for the frame to be fully received and be reported
-        // to us via lowerFrameReceived() or corruptedFrameReceived(), and decide then.
-        if (!rx->isReceptionInProgress())
-            handleTimeout();
-    }
-    else {
-        ASSERT(false);
-    }
-}
-
-IFrameExchange::FrameExchangeState StepBasedFrameExchange::newHandleSelfMessage(cMessage* msg)
+FrameExchangeState StepBasedFrameExchange::handleSelfMessage(cMessage* msg)
 {
     EV_DETAIL << "Timeout in step " << step << "\n";
     ASSERT(status == INPROGRESS);
@@ -249,6 +231,7 @@ IFrameExchange::FrameExchangeState StepBasedFrameExchange::newHandleSelfMessage(
     else {
         ASSERT(false);
     }
+    return FrameExchangeState::DONT_CARE;
 }
 
 
@@ -261,7 +244,7 @@ void StepBasedFrameExchange::checkOperation(Operation operation, const char *whe
     }
 }
 
-IFrameExchange::FrameExchangeState StepBasedFrameExchange::handleTimeout()
+FrameExchangeState StepBasedFrameExchange::handleTimeout()
 {
     operation = NONE;
     FrameExchangeState state = processTimeout(step);
@@ -282,20 +265,26 @@ void StepBasedFrameExchange::continueFrameExchange()
 void StepBasedFrameExchange::abortFrameExchange()
 {
     EV_DETAIL << "Aborting frame exchange " << getClassName() << std::endl;
-    //statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, longRetryCount); // TOOD: fix longRetryCount, dataFrame
-    giveUp();
 }
 
 void StepBasedFrameExchange::transmitFrame(Ieee80211Frame *frame)
 {
     setOperation(TRANSMIT_FRAME);
-    tx->transmitFrame(frame, this);
+    tx->transmitFrame(frame);
 }
 
 void StepBasedFrameExchange::transmitFrame(Ieee80211Frame *frame, simtime_t ifs)
 {
     setOperation(TRANSMIT_FRAME);
-    tx->transmitFrame(frame, ifs, this);
+    tx->transmitFrame(frame, ifs);
+}
+
+void StepBasedFrameExchange::succeed()
+{
+    EV_DETAIL << "Frame exchange successful\n";
+    setOperation(SUCCEED);
+    status = SUCCEEDED;
+    finished = true;
 }
 
 void StepBasedFrameExchange::expectFullReplyWithin(simtime_t timeout)
@@ -318,24 +307,6 @@ void StepBasedFrameExchange::gotoStep(int step)
 {
     setOperation(GOTO_STEP);
     gotoTarget = step;
-}
-
-void StepBasedFrameExchange::giveUp()
-{
-    EV_DETAIL << "Frame exchange failed\n";
-    setOperation(FAIL);
-    status = FAILED;
-    finished = true;
-    succeeded = false;
-}
-
-void StepBasedFrameExchange::succeed()
-{
-    EV_DETAIL << "Frame exchange successful\n";
-    setOperation(SUCCEED);
-    status = SUCCEEDED;
-    finished = true;
-    succeeded = true;
 }
 
 void StepBasedFrameExchange::setOperation(Operation newOperation)

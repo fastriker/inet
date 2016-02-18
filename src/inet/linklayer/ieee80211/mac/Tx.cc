@@ -48,17 +48,16 @@ void Tx::initialize()
     updateDisplayString();
 }
 
-void Tx::transmitFrame(Ieee80211Frame *frame, ITxCallback *txCallback)
+void Tx::transmitFrame(Ieee80211Frame *frame)
 {
-    transmitFrame(frame, SIMTIME_ZERO, txCallback); //TODO make dedicated version, without the timer
+    transmitFrame(frame, SIMTIME_ZERO); //TODO make dedicated version, without the timer
 }
 
-void Tx::transmitFrame(Ieee80211Frame *frame, simtime_t ifs, ITxCallback *txCallback)
+void Tx::transmitFrame(Ieee80211Frame *frame, simtime_t ifs)
 {
     Enter_Method("transmitFrame(\"%s\")", frame->getName());
     take(frame);
     this->frame = frame;
-    this->txCallback = txCallback;
 
     ASSERT(!endIfsTimer->isScheduled() && !transmitting);    // we are idle
     scheduleAt(simTime() + ifs, endIfsTimer);
@@ -71,7 +70,7 @@ void Tx::radioTransmissionFinished()
     Enter_Method_Silent();
     if (transmitting) {
         EV_DETAIL << "Tx: radioTransmissionFinished()\n";
-        upperMac->transmissionComplete(txCallback);
+        upperMac->transmissionComplete();
         transmitting = false;
         frame = nullptr;
         rx->frameTransmitted(durationField);

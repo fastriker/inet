@@ -53,7 +53,7 @@ class IMsduAggregation;
 /**
  * UpperMac for DCF mode.
  */
-class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public IContentionCallback, protected IFrameExchange::IFrameExchangeCallback
+class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public IContentionCallback
 {
     public:
         typedef std::list<Ieee80211DataOrMgmtFrame*> Ieee80211DataOrMgmtFrameList;
@@ -72,7 +72,6 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
 
         cQueue transmissionQueue;
         IFrameExchange *frameExchange = nullptr;
-        bool finished = false;
         IDuplicateDetector *duplicateDetection = nullptr;
         IMsduAggregation *msduAggregator = nullptr;
         IFragmenter *fragmenter = nullptr;
@@ -94,16 +93,14 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         virtual void startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac);
         virtual void startContention();
 
-        // IFinishedCallback
-        virtual void frameExchangeFinished(IFrameExchange *what, bool successful) override;
-        virtual void frameTransmissionFailed(IFrameExchange *what, Ieee80211Frame* dataFrame, Ieee80211Frame *failedFrame, AccessCategory ac) override;
-        virtual void frameTransmissionSucceeded(IFrameExchange *what, Ieee80211Frame *frame, AccessCategory ac) override;
+        virtual void frameExchangeFinished();
+        virtual void frameTransmissionFailed(FrameExchangeState state);
+        virtual void frameTransmissionSucceeded(FrameExchangeState state);
 
         void sendAck(Ieee80211DataOrMgmtFrame *frame);
         void sendCts(Ieee80211RTSFrame *frame);
-        void cleanupFrameExchanges();
 
-        virtual bool processOrDeleteLowerFrame(Ieee80211Frame *frame);
+        virtual bool processLowerFrame(Ieee80211Frame *frame);
         virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
 
         void old_startContention(int retryCount);
@@ -114,7 +111,7 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void corruptedOrNotForUsFrameReceived() override;
-        virtual void transmissionComplete(ITxCallback *callback) override;
+        virtual void transmissionComplete() override;
         virtual void channelAccessGranted(int txIndex) override;
         virtual void internalCollision(int txIndex) override;
 };

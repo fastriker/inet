@@ -28,6 +28,7 @@ namespace inet {
 namespace ieee80211 {
 
 class Ieee80211Frame;
+class FrameExchangeState;
 
 /**
  * Abstract interface for frame exchange classes. Frame exchanges are a basic
@@ -35,48 +36,19 @@ class Ieee80211Frame;
  */
 class INET_API IFrameExchange
 {
-    public:
-        class INET_API IFrameExchangeCallback {
-            public:
-                virtual void frameExchangeFinished(IFrameExchange *what, bool successful) = 0;
-                virtual void frameTransmissionFailed(IFrameExchange *what, Ieee80211Frame *dataFrame, Ieee80211Frame *failedFrame, AccessCategory ac) = 0;
-                virtual void frameTransmissionSucceeded(IFrameExchange *what, Ieee80211Frame *frame, AccessCategory ac) = 0;
-                virtual ~IFrameExchangeCallback() {}
-        };
-
-        enum FrameProcessingResult { ACCEPTED, IGNORED, TIMEOUT }; // TODO: step result
-
-        class INET_API FrameExchangeState
-        {
-            public:
-                static FrameExchangeState DONT_CARE;
-
-                FrameProcessingResult result = IGNORED;
-                AccessCategory ac = AC_LEGACY;
-                Ieee80211DataOrMgmtFrame *dataOrMgmtFrame = nullptr;
-                Ieee80211Frame *transmittedFrame = nullptr;
-                bool successfullyTransmitted = false;
-
-                FrameExchangeState(FrameProcessingResult result, AccessCategory ac, Ieee80211DataOrMgmtFrame *dataOrMgmtFrame, Ieee80211Frame *transmittedFrame, bool successfullyTransmitted) :
-                    result(result), ac(ac), dataOrMgmtFrame(dataOrMgmtFrame), transmittedFrame(transmittedFrame), successfullyTransmitted(successfullyTransmitted) {}
-        };
-
+    protected:
+        virtual bool isFinished() = 0;
 
     public:
         virtual ~IFrameExchange() {}
         virtual void startFrameExchange() = 0;
         virtual void continueFrameExchange() = 0;
         virtual void abortFrameExchange() = 0;
-        virtual Ieee80211DataOrMgmtFrame *getDataFrame() = 0;
-        virtual Ieee80211Frame *getFirstFrame() = 0;
         virtual FrameExchangeState lowerFrameReceived(Ieee80211Frame *frame) = 0;
         virtual void corruptedOrNotForUsFrameReceived() = 0;
         virtual AccessCategory getAc() = 0;
-
-        /////
-        virtual FrameExchangeState newHandleSelfMessage(cMessage *msg) = 0;
-        virtual bool isSucceeded() = 0;
-        virtual bool isFinished() = 0;
+        virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() = 0;
+        virtual Ieee80211Frame *getNextFrameWaitingForTransmission() = 0;
 };
 
 } // namespace ieee80211

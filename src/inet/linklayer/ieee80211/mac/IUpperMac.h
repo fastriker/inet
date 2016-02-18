@@ -26,7 +26,6 @@ namespace inet {
 namespace ieee80211 {
 
 class IContentionCallback;
-class ITxCallback;
 class IUpperMacContext;
 class Ieee80211Frame;
 class Ieee80211DataOrMgmtFrame;
@@ -49,7 +48,7 @@ class INET_API IUpperMac
         virtual void corruptedOrNotForUsFrameReceived() = 0;
 
         // from Tx:
-        virtual void transmissionComplete(ITxCallback *callback) = 0;
+        virtual void transmissionComplete() = 0;
 };
 
 } // namespace ieee80211
