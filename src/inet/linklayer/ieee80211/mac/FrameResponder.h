@@ -19,12 +19,19 @@
 #define __INET_FRAMERESPONDER_H
 
 #include "IFrameResponder.h"
+#include "ITx.h"
+#include "MacUtils.h"
+#include "MacParameters.h"
 
 namespace inet {
 namespace ieee80211 {
 
 class INET_API FrameResponder : public IFrameResponder
 {
+    protected:
+        IMacParameters *params = nullptr;
+        MacUtils *utils = nullptr;
+        ITx *tx = nullptr;
 
     protected:
         void sendAck(Ieee80211DataOrMgmtFrame *frame);
@@ -32,6 +39,8 @@ class INET_API FrameResponder : public IFrameResponder
 
     public:
         virtual bool respondToLowerFrameIfPossible(Ieee80211Frame *frame) override;
+        FrameResponder(IMacParameters *params, MacUtils *utils, ITx *tx) :
+            params(params), utils(utils), tx(tx) {}
 };
 
 } /* namespace ieee80211 */

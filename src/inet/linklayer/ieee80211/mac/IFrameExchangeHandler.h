@@ -19,17 +19,22 @@
 #define __INET_IFRAMEEXCHANGEHANDLER_H
 
 #include "inet/common/INETDefs.h"
+#include "Ieee80211Frame_m.h"
+#include "AccessCategory.h"
 
 namespace inet {
 namespace ieee80211 {
 
 class INET_API IFrameExchangeHandler {
     public:
-        virtual void channelAccessGranted(int TxIndex) = 0;
+        // Notifications
+        virtual void channelAccessGranted(int txIndex) = 0;
         virtual void transmissionComplete() = 0;
         virtual bool processLowerFrameIfPossible(Ieee80211Frame *frame) = 0;
         virtual void corruptedOrNotForUsFrameReceived() = 0;
         virtual void handleMessage(cMessage *msg) = 0;
+        virtual void upperFrameReceived(AccessCategory ac) = 0;
+        virtual void internalCollision(AccessCategory ac) = 0;
 
 };
 

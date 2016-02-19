@@ -21,6 +21,7 @@
 #define __INET_IUPPERMAC_H
 
 #include "inet/common/INETDefs.h"
+#include "AccessCategory.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -51,9 +52,12 @@ class INET_API IUpperMac
         virtual void transmissionComplete() = 0;
 
         // from FrameExchangeHandler:
-        virtual Ieee80211DataOrMgmtFrame *getNextFrameToTransmit();
-        virtual void frameTransmissionFailed();
-        virtual void frameExchangeFinished();
+        virtual Ieee80211DataOrMgmtFrame *dequeueNextFrameToTransmit(AccessCategory ac);
+        virtual Ieee80211DataOrMgmtFrame *getFirstFrame(AccessCategory ac);
+        virtual void deleteFirstFrame(AccessCategory ac);
+        virtual void startContention(AccessCategory ac, int cw);
+        virtual void releaseChannel(AccessCategory ac);
+        virtual bool hasMoreFrameToTransmit(AccessCategory ac);
 };
 
 } // namespace ieee80211

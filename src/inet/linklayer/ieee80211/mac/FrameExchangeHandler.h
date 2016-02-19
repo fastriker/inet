@@ -19,6 +19,11 @@
 #define __INET_FRAMEEXCHANGEHANDLER_H
 
 #include "IFrameExchangeHandler.h"
+#include "UpperMacTxRetryHandler.h"
+#include "IUpperMac.h"
+#include "MacUtils.h"
+#include "MacParameters.h"
+#include "IRateSelection.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -26,25 +31,32 @@ namespace ieee80211 {
 class INET_API FrameExchangeHandler : public IFrameExchangeHandler
 {
     protected:
-        AccessCategory channelOwner;
-        IFrameExchange *frameExchange = nullptr;
+        AccessCategory channelOwner = AccessCategory(-1);
+        IFrameExchange **frameExchanges = nullptr;
+        UpperMacTxRetryHandler **txRetryHandlers = nullptr;
         IUpperMac *upperMac = nullptr;
-        UpperMacTxRetryHandler *txRetryHandler = nullptr;
+        MacUtils *utils = nullptr;
+        IMacParameters *params = nullptr;
+        IRateSelection *rateSelection = nullptr;
 
     protected:
         virtual void startFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac);
-        virtual void frameExchangeFinished();
+        virtual void frameExchangeFinished(FrameExchangeState state);
+        virtual void frameExchangeFinished(AccessCategory ac);
         virtual void frameTransmissionFailed(FrameExchangeState state);
         virtual void frameTransmissionSucceeded(FrameExchangeState state);
 
     public:
+        virtual void upperFrameReceived(AccessCategory ac);
         virtual void channelAccessGranted(int txIndex) override;
         virtual bool processLowerFrameIfPossible(Ieee80211Frame *frame) override;
         virtual void transmissionComplete() override;
         virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void handleMessage(cMessage *msg) override;
+        virtual void internalCollision(AccessCategory ac) override;
 
-        FrameExchangeHandler(IUpperMac *upperMac) : upperMac(upperMac) {}
+        FrameExchangeHandler(IUpperMac *upperMac, IMacParameters *params, MacUtils *utils, IRateSelection *rateSelection);
+        ~FrameExchangeHandler();
 };
 
 } /* namespace ieee80211 */

@@ -19,6 +19,7 @@
 #define __INET_IFRAMERESPONDER_H
 
 #include "inet/common/INETDefs.h"
+#include "Ieee80211Frame_m.h"
 
 namespace inet {
 namespace ieee80211 {

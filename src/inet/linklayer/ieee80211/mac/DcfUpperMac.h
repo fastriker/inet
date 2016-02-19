@@ -71,8 +71,7 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         int maxQueueSize;
         int fragmentationThreshold = 2346;
 
-        cQueue transmissionQueue;
-        IFrameExchange *frameExchange = nullptr;
+        cQueue *transmissionQueue = nullptr;
         IDuplicateDetector *duplicateDetection = nullptr;
         IMsduAggregation *msduAggregator = nullptr;
         IFragmenter *fragmenter = nullptr;
@@ -85,17 +84,17 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         IFrameResponder *frameResponder = nullptr;
 
     protected:
-        void initialize() override;
+        virtual void initialize() override;
         virtual IMacParameters *extractParameters(const IIeee80211Mode *slowestMandatoryMode);
-        void handleMessage(cMessage *msg) override;
-        virtual void enqueue(Ieee80211DataOrMgmtFrame *frame);
-        Ieee80211DataOrMgmtFrame *aggregateIfPossible();
-        bool fragmentIfPossible(Ieee80211DataOrMgmtFrame *nextFrame, bool aMsduPresent);
-        void assignSequenceNumber(Ieee80211DataOrMgmtFrame *frame);
+        virtual void handleMessage(cMessage *msg) override;
+        virtual void enqueue(Ieee80211DataOrMgmtFrame *frame, AccessCategory ac);
+        virtual Ieee80211DataOrMgmtFrame *aggregateIfPossible(AccessCategory ac);
+        virtual bool fragmentIfPossible(Ieee80211DataOrMgmtFrame* nextFrame, bool aMsduPresent, AccessCategory ac);
+        virtual void assignSequenceNumber(Ieee80211DataOrMgmtFrame *frame);
         virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
-        bool sendUpIfNecessary(Ieee80211Frame *frame);
-        void old_startContention(int retryCount);
-        virtual void startContention();
+        virtual bool sendUpIfNecessary(Ieee80211Frame *frame);
+        virtual AccessCategory classifyFrame(Ieee80211DataOrMgmtFrame *frame);
+        virtual AccessCategory mapTidToAc(int tid);
 
     public:
         DcfUpperMac();
@@ -105,10 +104,14 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         virtual void transmissionComplete() override;
         virtual void channelAccessGranted(int txIndex) override;
         virtual void internalCollision(int txIndex) override;
+        virtual void corruptedOrNotForUsFrameReceived();
+        virtual void releaseChannel(AccessCategory ac) override;
+        virtual void startContention(AccessCategory ac, int cw) override;
+        virtual Ieee80211DataOrMgmtFrame *dequeueNextFrameToTransmit(AccessCategory ac) override;
+        virtual bool hasMoreFrameToTransmit(AccessCategory ac) override;
+        virtual Ieee80211DataOrMgmtFrame *getFirstFrame(AccessCategory ac) override;
+        virtual void deleteFirstFrame(AccessCategory ac) override;
 
-        virtual Ieee80211DataOrMgmtFrame *getNextFrameToTransmit();
-        virtual void frameTransmissionFailed();
-        virtual void frameExchangeFinished();
 };
 
 } // namespace ieee80211
