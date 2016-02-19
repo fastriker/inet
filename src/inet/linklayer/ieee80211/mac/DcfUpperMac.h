@@ -26,6 +26,8 @@
 #include "ITxCallback.h"
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
 #include "UpperMacTxRetryHandler.h"
+#include "IFrameExchangeHandler.h"
+#include "IFrameResponder.h"
 
 using namespace inet::physicallayer;
 
@@ -65,7 +67,6 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         IRx *rx = nullptr;
         ITx *tx = nullptr;
         IContention **contention = nullptr;
-        UpperMacTxRetryHandler *txRetryHandler = nullptr;
 
         int maxQueueSize;
         int fragmentationThreshold = 2346;
@@ -80,40 +81,34 @@ class INET_API DcfUpperMac : public cSimpleModule, public IUpperMac, public ICon
         IRateControl *rateControl = nullptr;
         IStatistics *statistics = nullptr;
 
+        IFrameExchangeHandler *frameExchangeHandler = nullptr;
+        IFrameResponder *frameResponder = nullptr;
+
     protected:
         void initialize() override;
         virtual IMacParameters *extractParameters(const IIeee80211Mode *slowestMandatoryMode);
         void handleMessage(cMessage *msg) override;
-
         virtual void enqueue(Ieee80211DataOrMgmtFrame *frame);
-        virtual Ieee80211DataOrMgmtFrame *dequeue();
         Ieee80211DataOrMgmtFrame *aggregateIfPossible();
         bool fragmentIfPossible(Ieee80211DataOrMgmtFrame *nextFrame, bool aMsduPresent);
         void assignSequenceNumber(Ieee80211DataOrMgmtFrame *frame);
-        virtual void startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac);
-        virtual void startContention();
-
-        virtual void frameExchangeFinished();
-        virtual void frameTransmissionFailed(FrameExchangeState state);
-        virtual void frameTransmissionSucceeded(FrameExchangeState state);
-
-        void sendAck(Ieee80211DataOrMgmtFrame *frame);
-        void sendCts(Ieee80211RTSFrame *frame);
-
-        virtual bool processLowerFrame(Ieee80211Frame *frame);
         virtual void explodeAggregatedFrame(Ieee80211DataFrame *frame);
-
+        bool sendUpIfNecessary(Ieee80211Frame *frame);
         void old_startContention(int retryCount);
+        virtual void startContention();
 
     public:
         DcfUpperMac();
         virtual ~DcfUpperMac();
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
-        virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void transmissionComplete() override;
         virtual void channelAccessGranted(int txIndex) override;
         virtual void internalCollision(int txIndex) override;
+
+        virtual Ieee80211DataOrMgmtFrame *getNextFrameToTransmit();
+        virtual void frameTransmissionFailed();
+        virtual void frameExchangeFinished();
 };
 
 } // namespace ieee80211

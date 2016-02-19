@@ -49,6 +49,11 @@ class INET_API IUpperMac
 
         // from Tx:
         virtual void transmissionComplete() = 0;
+
+        // from FrameExchangeHandler:
+        virtual Ieee80211DataOrMgmtFrame *getNextFrameToTransmit();
+        virtual void frameTransmissionFailed();
+        virtual void frameExchangeFinished();
 };
 
 } // namespace ieee80211
