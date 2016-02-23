@@ -266,8 +266,8 @@ void WiseRoute::handleUpperPacket(cPacket *msg)
         if (nextHopMacAddr.isUnspecified())
             throw cRuntimeError("Cannot immediately resolve MAC address. Please configure a GenericARP module.");
     }
-    setDownControlInfo(pkt, nextHopMacAddr);
     pkt->encapsulate(static_cast<cPacket *>(msg));
+    setDownControlInfo(pkt, nextHopMacAddr);
     sendDown(pkt);
     nbDataPacketsSent++;
 }
@@ -328,15 +328,14 @@ void WiseRoute::updateRouteTable(const L3Address& origin, const L3Address& lastH
 
 cMessage *WiseRoute::decapsMsg(WiseRouteDatagram *msg)
 {
-    cMessage *m = msg->decapsulate();
-    SimpleNetworkProtocolControlInfo *const controlInfo = new SimpleNetworkProtocolControlInfo();
+    cPacket *transportPacket = msg->decapsulate();
+    SimpleNetworkProtocolControlInfo *controlInfo = transportPacket->ensureTag<SimpleNetworkProtocolControlInfo>();
     controlInfo->setSourceAddress(msg->getInitialSrcAddr());
-    controlInfo->setTransportProtocol(msg->getTransportProtocol());
-    m->setControlInfo(controlInfo);
+    controlInfo->setProtocol(msg->getTransportProtocol());
     nbHops = nbHops + msg->getNbHops();
     // delete the netw packet
     delete msg;
-    return m;
+    return transportPacket;
 }
 
 WiseRoute::floodTypes WiseRoute::updateFloodTable(bool isFlood, const tFloodTable::key_type& srcAddr, const tFloodTable::key_type& destAddr, unsigned long seqNum)
@@ -378,9 +377,8 @@ WiseRoute::tFloodTable::key_type WiseRoute::getRoute(const tFloodTable::key_type
  */
 cObject *WiseRoute::setDownControlInfo(cMessage *const pMsg, const MACAddress& pDestAddr)
 {
-    SimpleLinkLayerControlInfo *const cCtrlInfo = new SimpleLinkLayerControlInfo();
+    SimpleLinkLayerControlInfo *cCtrlInfo = pMsg->ensureTag<SimpleLinkLayerControlInfo>();
     cCtrlInfo->setDest(pDestAddr);
-    pMsg->setControlInfo(cCtrlInfo);
     return cCtrlInfo;
 }
 
