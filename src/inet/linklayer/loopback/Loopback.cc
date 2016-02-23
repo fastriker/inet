@@ -111,7 +111,7 @@ bool Loopback::isUpperMsg(cMessage *msg)
 
 void Loopback::updateDisplayString()
 {
-    if (getEnvir()->isDisabled()) {
+    if (getEnvir()->isExpressMode()) {
         // speed up things
         getDisplayString().setTagArg("t", 0, "");
     }
