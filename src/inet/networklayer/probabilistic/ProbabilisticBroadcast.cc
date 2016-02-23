@@ -65,7 +65,6 @@ void ProbabilisticBroadcast::handleLowerPacket(cPacket *msg)
     SimpleLinkLayerControlInfo *cInfo = msg->getTag<SimpleLinkLayerControlInfo>();
     m->setNbHops(m->getNbHops() + 1);
     macSrcAddr = cInfo->getSrc();
-    delete cInfo;
     ++nbDataPacketsReceived;
     nbHops = nbHops + m->getNbHops();
     oneHopLatencies.record(SIMTIME_DBL(simTime() - m->getTimestamp()));
@@ -286,9 +285,8 @@ cPacket *ProbabilisticBroadcast::encapsMsg(cPacket *msg)
     pkt->setId(getNextID());
     pkt->setTransportProtocol(networkControlInfo->getTransportProtocol());
 
-    setDownControlInfo(pkt, MACAddress::BROADCAST_ADDRESS);
-    //encapsulate the application packet
     pkt->encapsulate(msg);
+    setDownControlInfo(pkt, MACAddress::BROADCAST_ADDRESS);
 
     // clean-up
     delete controlInfo;
