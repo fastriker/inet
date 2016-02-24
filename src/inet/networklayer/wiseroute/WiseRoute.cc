@@ -334,7 +334,7 @@ cMessage *WiseRoute::decapsMsg(WiseRouteDatagram *msg)
     cPacket *transportPacket = msg->decapsulate();
 #if 1
     SimpleNetworkProtocolControlInfo *const controlInfo = new SimpleNetworkProtocolControlInfo();
-    controlInfo->setSourceAddress(msg->getSrcAddr());
+    controlInfo->setSourceAddress(msg->getInitialSrcAddr());
     controlInfo->setProtocol(msg->getTransportProtocol());
     transportPacket->setControlInfo(controlInfo);
 #else
