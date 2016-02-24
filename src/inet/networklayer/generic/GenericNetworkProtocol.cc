@@ -25,6 +25,7 @@
 #include "inet/networklayer/generic/GenericRoutingTable.h"
 #include "inet/common/ModuleAccess.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/networklayer/common/IPSocket.h"
 
 namespace inet {

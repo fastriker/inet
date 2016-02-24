@@ -75,12 +75,10 @@ enum EtherType
 //
 class Ieee802Ctrl
 {
-    @customize(true);
-
     MACAddress src;  // src MAC address (can be left empty when sending)
     MACAddress dest; // dest MAC address
     int etherType @enum(EtherType);   // used with ~EthernetIIFrame
-    int interfaceId; // incoming or outgoing interface (not needed everywhere)
+//    int interfaceId; // incoming or outgoing interface (not needed everywhere)
     int switchPort = -1; // swich port index (only in swiches)
     int userPriority = -1; // 802.1d User Priority (UP), 0..7. Note: In 802.11, UP corresponds to 0..7 TID values, and there's a standard static mapping from TID to AC (Access Category)
     int ssap;        // used with IEEE 802 LLC (see ~EtherFrameWithLLC)

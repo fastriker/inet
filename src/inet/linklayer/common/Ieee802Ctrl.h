@@ -20,28 +20,6 @@
 
 #include "inet/common/INETDefs.h"
 #include "inet/linklayer/common/Ieee802Ctrl_m.h"
-#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
-
-namespace inet {
-
-/**
- * Represents a IEEE 802 control info. More info in the Ieee802Ctrl.msg file
- * (and the documentation generated from it).
- */
-class INET_API Ieee802Ctrl : public Ieee802Ctrl_Base
-{
-  public:
-    Ieee802Ctrl() : Ieee802Ctrl_Base() {}
-    Ieee802Ctrl(const Ieee802Ctrl& other) : Ieee802Ctrl_Base(other) {}
-    Ieee802Ctrl& operator=(const Ieee802Ctrl& other) { Ieee802Ctrl_Base::operator=(other); return *this; }
-
-    virtual Ieee802Ctrl *dup() const override { return new Ieee802Ctrl(*this); }
-
-    virtual int getInterfaceId() const override { return Ieee802Ctrl_Base::getInterfaceId(); }
-    virtual void setInterfaceId(int interfaceId) override { Ieee802Ctrl_Base::setInterfaceId(interfaceId); }
-};
-
-} // namespace inet
 
 #endif // ifndef __INET_IEEE802CTRL_H
 

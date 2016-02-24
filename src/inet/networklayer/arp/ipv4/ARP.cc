@@ -21,6 +21,7 @@
 
 #include "inet/networklayer/arp/ipv4/ARPPacket_m.h"
 #include "inet/linklayer/common/Ieee802Ctrl.h"
+#include "inet/linklayer/common/SimpleLinkLayerControlInfo.h"
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/networklayer/ipv4/IIPv4RoutingTable.h"
 #include "inet/networklayer/contract/ipv4/IPv4ControlInfo.h"
@@ -211,7 +212,6 @@ void ARP::sendPacketToNIC(cMessage *msg, const InterfaceEntry *ie, const MACAddr
     cInfo->setInterfaceId(ie->getInterfaceId());
     Ieee802Ctrl *controlInfo = msg->ensureTag<Ieee802Ctrl>();
     controlInfo->setEtherType(etherType);
-    controlInfo->setInterfaceId(ie->getInterfaceId());
 
     // send out
     EV_INFO << "Sending " << msg << " to network protocol.\n";
