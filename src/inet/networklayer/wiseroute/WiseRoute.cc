@@ -162,7 +162,8 @@ void WiseRoute::handleLowerPacket(cPacket *msg)
                 // local hop source address.
                 msgCopy = check_and_cast<WiseRouteDatagram *>(netwMsg->dup());
                 netwMsg->setSrcAddr(myNetwAddr);
-                pCtrlInfo = netwMsg->removeControlInfo();
+                delete netwMsg->removeControlInfo();
+                delete netwMsg->removeTag<SimpleLinkLayerControlInfo>();   //TODO or use clearTags() ???
                 setDownControlInfo(netwMsg, MACAddress::BROADCAST_ADDRESS);
                 netwMsg->setNbHops(netwMsg->getNbHops() + 1);
                 sendDown(netwMsg);
@@ -184,7 +185,8 @@ void WiseRoute::handleLowerPacket(cPacket *msg)
             // not for me. if flood, forward as flood. else select a route
             if (floodType == FORWARD) {
                 netwMsg->setSrcAddr(myNetwAddr);
-                pCtrlInfo = netwMsg->removeControlInfo();
+                delete netwMsg->removeControlInfo();
+                delete netwMsg->removeTag<SimpleLinkLayerControlInfo>();   //TODO or use clearTags() ???
                 setDownControlInfo(netwMsg, MACAddress::BROADCAST_ADDRESS);
                 netwMsg->setNbHops(netwMsg->getNbHops() + 1);
                 sendDown(netwMsg);
@@ -200,7 +202,8 @@ void WiseRoute::handleLowerPacket(cPacket *msg)
                 }
                 netwMsg->setSrcAddr(myNetwAddr);
                 netwMsg->setDestAddr(nextHop);
-                pCtrlInfo = netwMsg->removeControlInfo();
+                delete netwMsg->removeControlInfo();
+                delete netwMsg->removeTag<SimpleLinkLayerControlInfo>();   //TODO or use clearTags() ???
                 MACAddress nextHopMacAddr = arp->resolveL3Address(nextHop, nullptr);    //FIXME interface entry pointer needed
                 if (nextHopMacAddr.isUnspecified())
                     throw cRuntimeError("Cannot immediately resolve MAC address. Please configure a GenericARP module.");
