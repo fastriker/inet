@@ -329,9 +329,16 @@ void WiseRoute::updateRouteTable(const L3Address& origin, const L3Address& lastH
 cMessage *WiseRoute::decapsMsg(WiseRouteDatagram *msg)
 {
     cPacket *transportPacket = msg->decapsulate();
+#if 1
+    SimpleNetworkProtocolControlInfo *const controlInfo = new SimpleNetworkProtocolControlInfo();
+    controlInfo->setSourceAddress(msg->getSrcAddr());
+    controlInfo->setProtocol(msg->getTransportProtocol());
+    transportPacket->setControlInfo(controlInfo);
+#else
     SimpleNetworkProtocolControlInfo *controlInfo = transportPacket->ensureTag<SimpleNetworkProtocolControlInfo>();
     controlInfo->setSourceAddress(msg->getInitialSrcAddr());
     controlInfo->setProtocol(msg->getTransportProtocol());
+#endif
     nbHops = nbHops + msg->getNbHops();
     // delete the netw packet
     delete msg;

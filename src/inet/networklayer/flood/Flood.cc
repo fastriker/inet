@@ -249,9 +249,16 @@ bool Flood::notBroadcasted(FloodDatagram *msg)
 cMessage *Flood::decapsMsg(FloodDatagram *floodDatagram)
 {
     cPacket *transportPacket = floodDatagram->decapsulate();
+#if 1
+    SimpleNetworkProtocolControlInfo *const controlInfo = new SimpleNetworkProtocolControlInfo();
+    controlInfo->setSourceAddress(floodDatagram->getSrcAddr());
+    controlInfo->setProtocol(floodDatagram->getTransportProtocol());
+    transportPacket->setControlInfo(controlInfo);
+#else
     SimpleNetworkProtocolControlInfo *controlInfo = transportPacket->ensureTag<SimpleNetworkProtocolControlInfo>();
     controlInfo->setSourceAddress(floodDatagram->getSourceAddress());
     controlInfo->setProtocol(floodDatagram->getTransportProtocol());
+#endif
     delete floodDatagram;
     return transportPacket;
 }

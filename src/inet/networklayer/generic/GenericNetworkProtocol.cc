@@ -449,7 +449,12 @@ void GenericNetworkProtocol::sendDatagramToOutput(GenericDatagram *datagram, con
 
     if (!ie->isBroadcast()) {
         EV_DETAIL << "output interface " << ie->getName() << " is not broadcast, skipping ARP\n";
-        send(datagram, queueOutBaseGateId + ie->getNetworkLayerGateIndex());
+        //TODO
+        //SimpleLinkLayerControlInfo *cInfo = datagram->ensureTag<SimpleLinkLayerControlInfo>();
+        //cInfo->setDest(???);
+        Ieee802Ctrl *controlInfo = datagram->ensureTag<Ieee802Ctrl>();
+        controlInfo->setEtherType(ETHERTYPE_INET_GENERIC);
+        send(datagram, queueOutBaseGateId + ie->getNetworkLayerGateIndex());    //FIXME controlinfo???
         return;
     }
 
@@ -466,10 +471,10 @@ void GenericNetworkProtocol::sendDatagramToOutput(GenericDatagram *datagram, con
     }
     else {
         // add control info with MAC address
-        Ieee802Ctrl *controlInfo = new Ieee802Ctrl();
-        controlInfo->setDest(nextHopMAC);
+        SimpleLinkLayerControlInfo *cInfo = datagram->ensureTag<SimpleLinkLayerControlInfo>();
+        cInfo->setDest(nextHopMAC);
+        Ieee802Ctrl *controlInfo = datagram->ensureTag<Ieee802Ctrl>();
         controlInfo->setEtherType(ETHERTYPE_INET_GENERIC);
-        datagram->setControlInfo(controlInfo);
 
         // send out
         send(datagram, queueOutBaseGateId + ie->getNetworkLayerGateIndex());
