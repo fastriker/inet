@@ -33,8 +33,8 @@ using namespace inet::utils;
 namespace inet {
 namespace ieee80211 {
 
-SendDataWithAckFrameExchange::SendDataWithAckFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
-    StepBasedFrameExchange(context, txIndex, accessCategory), dataOrMgmtFrame(dataFrame)
+SendDataWithAckFrameExchange::SendDataWithAckFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex) :
+    StepBasedFrameExchange(context, txIndex), dataOrMgmtFrame(dataFrame)
 {
     dataFrame->setDuration(params->getSifsTime() + utils->getAckDuration());
 }
@@ -74,10 +74,10 @@ FrameExchangeState SendDataWithAckFrameExchange::processReply(int step, Ieee8021
     switch (step) {
         case 1:
             if (utils->isAck(frame)) {
-                return FrameExchangeState(FrameExchangeState::ACCEPTED, defaultAccessCategory, dataOrMgmtFrame, dataOrMgmtFrame);
+                return FrameExchangeState(FrameExchangeState::ACCEPTED, dataOrMgmtFrame, dataOrMgmtFrame);
             }
             else
-                return FrameExchangeState(FrameExchangeState::IGNORED, defaultAccessCategory, dataOrMgmtFrame, dataOrMgmtFrame);
+                return FrameExchangeState(FrameExchangeState::IGNORED, dataOrMgmtFrame, dataOrMgmtFrame);
         default: ASSERT(false);
         return FrameExchangeState::DONT_CARE;
     }
@@ -96,14 +96,14 @@ FrameExchangeState SendDataWithAckFrameExchange::transmissionFailed()
 {
     dataOrMgmtFrame->setRetry(true);
     gotoStep(0);
-    return FrameExchangeState(FrameExchangeState::TIMEOUT, defaultAccessCategory, dataOrMgmtFrame, dataOrMgmtFrame);
+    return FrameExchangeState(FrameExchangeState::TIMEOUT, dataOrMgmtFrame, dataOrMgmtFrame);
 }
 
 
 //------------------------------
 
-SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
-    StepBasedFrameExchange(context, txIndex, accessCategory), dataOrMgmtFrame(dataFrame)
+SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex) :
+    StepBasedFrameExchange(context, txIndex), dataOrMgmtFrame(dataFrame)
 {
     dataFrame->setDuration(params->getSifsTime() + utils->getAckDuration());
     rtsFrame = utils->buildRtsFrame(dataFrame);
@@ -142,16 +142,16 @@ FrameExchangeState SendDataWithRtsCtsFrameExchange::processReply(int step, Ieee8
     switch (step) {
         case 1:
             if (utils->isCts(frame)) {
-                return FrameExchangeState(FrameExchangeState::ACCEPTED, defaultAccessCategory, dataOrMgmtFrame, rtsFrame);
+                return FrameExchangeState(FrameExchangeState::ACCEPTED, dataOrMgmtFrame, rtsFrame);
             }
             else
-                return FrameExchangeState(FrameExchangeState::IGNORED, defaultAccessCategory, dataOrMgmtFrame, rtsFrame);
+                return FrameExchangeState(FrameExchangeState::IGNORED, dataOrMgmtFrame, rtsFrame);
         case 3:
             if (utils->isAck(frame)) {
-                return FrameExchangeState(FrameExchangeState::ACCEPTED, defaultAccessCategory, dataOrMgmtFrame, dataOrMgmtFrame);
+                return FrameExchangeState(FrameExchangeState::ACCEPTED, dataOrMgmtFrame, dataOrMgmtFrame);
             }
             else
-                return FrameExchangeState(FrameExchangeState::IGNORED, defaultAccessCategory, dataOrMgmtFrame, dataOrMgmtFrame);
+                return FrameExchangeState(FrameExchangeState::IGNORED, dataOrMgmtFrame, dataOrMgmtFrame);
         default: ASSERT(false);
         return FrameExchangeState::DONT_CARE;
     }
@@ -160,7 +160,9 @@ FrameExchangeState SendDataWithRtsCtsFrameExchange::processReply(int step, Ieee8
 FrameExchangeState SendDataWithRtsCtsFrameExchange::processTimeout(int step)
 {
     switch (step) {
+        case 1:
         return transmissionFailed(dataOrMgmtFrame, rtsFrame);
+        case 2:
         return transmissionFailed(dataOrMgmtFrame, dataOrMgmtFrame);
         default: ASSERT(false);
     }
@@ -172,13 +174,13 @@ FrameExchangeState SendDataWithRtsCtsFrameExchange::transmissionFailed(Ieee80211
     if (failedFrame->getType() == ST_DATA)
         failedFrame->setRetry(true);
     gotoStep(0);
-    return FrameExchangeState(FrameExchangeState::TIMEOUT, defaultAccessCategory, dataOrMgmtFrame, failedFrame);
+    return FrameExchangeState(FrameExchangeState::TIMEOUT, dataOrMgmtFrame, failedFrame);
 }
 
 //------------------------------
 
-SendMulticastDataFrameExchange::SendMulticastDataFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
-    FrameExchange(context), dataOrMgmtFrame(dataFrame), txIndex(txIndex), accessCategory(accessCategory)
+SendMulticastDataFrameExchange::SendMulticastDataFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex) :
+    FrameExchange(context), dataOrMgmtFrame(dataFrame), txIndex(txIndex)
 {
     ASSERT(utils->isBroadcastOrMulticast(dataFrame));
     dataFrame->setDuration(0);

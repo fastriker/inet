@@ -27,7 +27,7 @@
 namespace inet {
 namespace ieee80211 {
 
-FrameExchangeState FrameExchangeState::DONT_CARE = FrameExchangeState(IGNORED, AC_LEGACY, nullptr, nullptr);
+FrameExchangeState FrameExchangeState::DONT_CARE = FrameExchangeState(IGNORED, nullptr, nullptr);
 
 FrameExchange::FrameExchange(FrameExchangeContext *context) :
     FrameExchangePlugin(context->ownerModule),
@@ -59,8 +59,8 @@ void FrameExchange::corruptedOrNotForUsFrameReceived()
     // we don't care
 }
 
-StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, int txIndex, AccessCategory accessCategory) :
-    FrameExchange(context), defaultTxIndex(txIndex), defaultAccessCategory(accessCategory)
+StepBasedFrameExchange::StepBasedFrameExchange(FrameExchangeContext *context, int txIndex) :
+    FrameExchange(context), defaultTxIndex(txIndex)
 {
 }
 

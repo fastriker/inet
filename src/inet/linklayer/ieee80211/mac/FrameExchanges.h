@@ -39,7 +39,7 @@ class INET_API SendDataWithAckFrameExchange : public StepBasedFrameExchange
         virtual FrameExchangeState processReply(int step, Ieee80211Frame *frame) override;
         virtual FrameExchangeState processTimeout(int step) override;
     public:
-        SendDataWithAckFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendDataWithAckFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex);
         ~SendDataWithAckFrameExchange();
         virtual std::string info() const override;
         virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() { return dataOrMgmtFrame; }
@@ -58,7 +58,7 @@ class INET_API SendDataWithRtsCtsFrameExchange : public StepBasedFrameExchange
         virtual FrameExchangeState transmissionFailed(Ieee80211DataOrMgmtFrame *dataOrMgmtFrame, Ieee80211Frame *failedFrame);
 
     public:
-        SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendDataWithRtsCtsFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex);
         ~SendDataWithRtsCtsFrameExchange();
         virtual std::string info() const override;
         virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() { return dataOrMgmtFrame; }
@@ -69,17 +69,15 @@ class INET_API SendMulticastDataFrameExchange : public FrameExchange
     protected:
         Ieee80211DataOrMgmtFrame *dataOrMgmtFrame;
         int txIndex;
-        AccessCategory accessCategory;
 
     public:
-        SendMulticastDataFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory);
+        SendMulticastDataFrameExchange(FrameExchangeContext *context, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex);
         ~SendMulticastDataFrameExchange();
         virtual void startFrameExchange() override;
         virtual void continueFrameExchange() override;
         virtual void abortFrameExchange() override;
         virtual FrameExchangeState handleSelfMessage(cMessage* timer) override;
         virtual std::string info() const override;
-        virtual AccessCategory getAc() override { return accessCategory; }
         virtual bool isFinished() override { return true; }
         virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() { return dataOrMgmtFrame; }
         virtual Ieee80211Frame *getNextFrameWaitingForTransmission() { return dataOrMgmtFrame; }

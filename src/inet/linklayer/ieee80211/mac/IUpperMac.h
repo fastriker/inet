@@ -50,14 +50,6 @@ class INET_API IUpperMac
 
         // from Tx:
         virtual void transmissionComplete() = 0;
-
-        // from FrameExchangeHandler:
-        virtual Ieee80211DataOrMgmtFrame *dequeueNextFrameToTransmit(AccessCategory ac);
-        virtual Ieee80211DataOrMgmtFrame *getFirstFrame(AccessCategory ac);
-        virtual void deleteFirstFrame(AccessCategory ac);
-        virtual void startContention(AccessCategory ac, int cw);
-        virtual void releaseChannel(AccessCategory ac);
-        virtual bool hasMoreFrameToTransmit(AccessCategory ac);
 };
 
 } // namespace ieee80211

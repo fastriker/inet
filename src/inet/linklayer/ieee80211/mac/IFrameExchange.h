@@ -36,9 +36,6 @@ class FrameExchangeState;
  */
 class INET_API IFrameExchange
 {
-    protected:
-        virtual bool isFinished() = 0;
-
     public:
         virtual ~IFrameExchange() {}
         virtual void startFrameExchange() = 0;
@@ -46,7 +43,6 @@ class INET_API IFrameExchange
         virtual void abortFrameExchange() = 0;
         virtual FrameExchangeState lowerFrameReceived(Ieee80211Frame *frame) = 0;
         virtual void corruptedOrNotForUsFrameReceived() = 0;
-        virtual AccessCategory getAc() = 0;
         virtual Ieee80211DataOrMgmtFrame *getDataOrMgmtFrame() = 0;
         virtual Ieee80211Frame *getNextFrameWaitingForTransmission() = 0;
 };

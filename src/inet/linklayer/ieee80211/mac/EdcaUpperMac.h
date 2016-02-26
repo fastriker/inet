@@ -13,8 +13,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef __INET_DCFUPPERMAC_H
-#define __INET_DCFUPPERMAC_H
+#ifndef __INET_EDCAUPPERMAC_H
+#define __INET_EDCAUPPERMAC_H
 
 #include "UpperMacBase.h"
 #include "FrameExchanges.h"
@@ -22,19 +22,25 @@
 namespace inet {
 namespace ieee80211 {
 
-class DcfUpperMac : public UpperMacBase, public IUpperMac
+class EdcaUpperMac : public UpperMacBase, public IUpperMac
 {
     protected:
-        Foo foo;
+        int numACs = 4;
+        Foo *foos;
         int maxQueueSize; // TODO: use queue subclass that supports maxQueueSize
+        AccessCategory channelOwner = AccessCategory(-1);
 
     protected:
         virtual void initialize() override;
         virtual void handleMessage(cMessage* msg) override;
+        virtual AccessCategory classifyFrame(Ieee80211DataOrMgmtFrame *frame);
+        virtual AccessCategory mapTidToAc(int tid);
+        virtual void deleteFrameExchange(Foo& foo);
 
     protected:
         virtual void corruptedOrNotForUsFrameReceived() override;
         virtual bool processLowerFrameIfPossible(Ieee80211Frame *frame) override;
+        virtual void releaseChannel(IContention *contention) override;
 
     public:
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
@@ -43,9 +49,11 @@ class DcfUpperMac : public UpperMacBase, public IUpperMac
         virtual void transmissionComplete() override;
         virtual void internalCollision(int txIndex) override;
         virtual void channelAccessGranted(int txIndex) override;
+
+        virtual ~EdcaUpperMac();
 };
 
 } /* namespace ieee80211 */
 } /* namespace inet */
 
-#endif // ifndef __INET_DCFUPPERMAC_H
+#endif // ifndef __INET_EDCAUPPERMAC_H

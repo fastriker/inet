@@ -122,7 +122,7 @@ void Contention::startContention(simtime_t ifs, simtime_t eifs, simtime_t slotTi
     this->slotTime = slotTime;
     this->contentionCallback = callback;
 
-    backoffSlots = intrand(cw + 1);
+    backoffSlots = cw;
     handleWithFSM(START, nullptr);
 }
 
